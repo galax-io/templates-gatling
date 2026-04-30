@@ -1,0 +1,56 @@
+apiVersion: galaxio.io/v1
+kind: Template
+name: scala-sbt
+displayName: Gatling Scala sbt
+description: Gatling Scala project with sbt and Galaxio performance-test layout
+engine: go-template
+tags:
+  - gatling
+  - scala
+  - sbt
+inputs:
+  Name:
+    type: string
+    default: myservice
+    description: Project name used by sbt and README.
+  Organization:
+    type: string
+    default: org.galaxio
+    description: sbt organization.
+  Package:
+    type: string
+    default: org.galaxio.performance
+    description: Scala package for generated Gatling sources.
+  PackagePath:
+    type: string
+    default: org/galaxio/performance
+    description: Filesystem path matching Package.
+  Description:
+    type: string
+    default: Gatling performance tests.
+    description: README description.
+  BaseUrl:
+    type: string
+    default: https://example.com
+    description: Default HTTP base URL in simulation.conf.
+  ScalaVersion:
+    type: string
+    default: 2.13.18
+  SbtVersion:
+    type: string
+    default: 1.12.2
+  GatlingVersion:
+    type: string
+    default: 3.11.5
+  SbtGatlingVersion:
+    type: string
+    default: 4.18.0
+  SbtScalafmtVersion:
+    type: string
+    default: 2.5.6
+  GatlingPicatinnyVersion:
+    type: string
+    default: 1.0.1
+files:
+  - from: files
+    to: .

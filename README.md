@@ -17,6 +17,8 @@ version: 0.1.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
+    version: 0.1.0
+    path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
     description: Gatling Java project with Maven
@@ -40,3 +42,34 @@ templates:
 | `scala-gradle` | Gatling Scala project with Gradle |
 | `java-gradle` | Gatling Java project with Gradle |
 | `kotlin-gradle` | Gatling Kotlin project with Gradle |
+
+## Scala sbt Inputs
+
+`scala-sbt` is a renderable Go-template based project. The template manifest is
+[`scala-sbt/galaxio-template.yaml`](scala-sbt/galaxio-template.yaml), and the
+project files live under [`scala-sbt/files`](scala-sbt/files).
+
+Useful inputs:
+
+| Input | Default |
+| --- | --- |
+| `Name` | `myservice` |
+| `Organization` | `org.galaxio` |
+| `Package` | `org.galaxio.performance` |
+| `PackagePath` | `org/galaxio/performance` |
+| `BaseUrl` | `https://example.com` |
+| `ScalaVersion` | `2.13.18` |
+| `GatlingVersion` | `3.11.5` |
+
+Future extensions that fit the current shape:
+
+- optional protocol modules: Kafka, JDBC, AMQP, JMS
+- source-root mode: `src/test/scala` or `src/it/scala`
+- workload profile presets: smoke, stability, max performance, closed pacing
+- optional NFR assertions from YAML
+
+## Validation
+
+CI installs the latest `galaxio` CLI, validates the pack manifest, renders the
+`scala-sbt` files with smoke values, and checks the rendered project structure
+and placeholder substitution.

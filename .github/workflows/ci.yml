@@ -21,7 +21,10 @@ jobs:
           go-version: "1.24.x"
 
       - name: Install galaxio
-        run: go install github.com/galax-io/galaxio-cli/cmd/galaxio@galaxio/template-init-render
+        run: |
+          git clone --depth 1 --branch galaxio/template-init-render https://github.com/galax-io/galaxio-cli "$RUNNER_TEMP/galaxio-cli"
+          cd "$RUNNER_TEMP/galaxio-cli"
+          go install ./cmd/galaxio
 
       - name: Check template version bump
         if: github.event_name == 'pull_request'

@@ -20,6 +20,15 @@ jobs:
         with:
           go-version: "1.24.x"
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
       - name: Install galaxio
         run: |
           git clone --depth 1 --branch galaxio/template-init-render https://github.com/galax-io/galaxio-cli "$RUNNER_TEMP/galaxio-cli"
@@ -61,13 +70,16 @@ jobs:
             --destination "$RUNNER_TEMP/scala-sbt-set" \
             --values .github/template-smoke-values.yaml \
             --set Name=orders-api-set \
-            --set BaseUrl=https://override.example.test
+            --set NameWord=ordersapiset
           grep -R "orders-api-set" "$RUNNER_TEMP/scala-sbt-set"
-          grep -R "https://override.example.test" "$RUNNER_TEMP/scala-sbt-set/src/test/resources/simulation.conf"
+          test -f "$RUNNER_TEMP/scala-sbt-set/src/test/scala/org/example/performance/ordersapiset/Debug.scala"
 
       - name: Check rendered substitutions
         run: |
           test -f "$RUNNER_TEMP/scala-sbt/build.sbt"
-          test -f "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/DebugSimulation.scala"
+          test -f "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Debug.scala"
           grep -R "orders-api" "$RUNNER_TEMP/scala-sbt"
           grep -R "org.example.performance" "$RUNNER_TEMP/scala-sbt/src/test/scala"
+
+      - name: Compare with g8 render
+        run: ./.github/scripts/compare-g8-render.sh

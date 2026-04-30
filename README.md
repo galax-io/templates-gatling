@@ -13,11 +13,11 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.2.0
+version: 0.3.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.2.0
+    version: 0.3.0
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
@@ -54,10 +54,9 @@ Useful inputs:
 | Input | Default |
 | --- | --- |
 | `Name` | `myservice` |
-| `Organization` | `org.galaxio` |
+| `NameWord` | `myservice` |
 | `Package` | `org.galaxio.performance` |
 | `PackagePath` | `org/galaxio/performance` |
-| `BaseUrl` | `https://example.com` |
 | `ScalaVersion` | `2.13.18` |
 | `GatlingVersion` | `3.11.5` |
 
@@ -72,4 +71,6 @@ Future extensions that fit the current shape:
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
 renders `scala-sbt` through `galaxio template init`, and checks the rendered
-project structure and placeholder substitution.
+project structure, placeholder substitution, and full rendered parity with
+[`galax-io/gatling-template.g8`](https://github.com/galax-io/gatling-template.g8)
+for the default HTTP-only template variant.

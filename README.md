@@ -70,6 +70,6 @@ Future extensions that fit the current shape:
 
 ## Validation
 
-CI installs the latest `galaxio` CLI, validates the pack manifest, configures a
-local registry, renders `scala-sbt` through `galaxio template init`, and checks
-the rendered project structure and placeholder substitution.
+CI installs `galaxio`, validates the pack manifest, configures a local registry,
+renders `scala-sbt` through `galaxio template init`, and checks the rendered
+project structure and placeholder substitution.

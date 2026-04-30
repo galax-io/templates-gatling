@@ -84,3 +84,8 @@ jobs:
 
       - name: Compare with g8 render
         run: ./.github/scripts/compare-g8-render.sh
+
+      - name: Compile scala-sbt rendered project
+        run: |
+          cd "$RUNNER_TEMP/scala-sbt"
+          sbt -batch Gatling/compile

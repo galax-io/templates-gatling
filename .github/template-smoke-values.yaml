@@ -1,0 +1,12 @@
+Name: orders-api
+Organization: org.example
+Package: org.example.performance
+PackagePath: org/example/performance
+Description: Smoke-rendered Gatling performance tests.
+BaseUrl: https://example.test
+ScalaVersion: 2.13.18
+SbtVersion: 1.12.2
+GatlingVersion: 3.11.5
+SbtGatlingVersion: 4.18.0
+SbtScalafmtVersion: 2.5.6
+GatlingPicatinnyVersion: 1.0.1

@@ -21,11 +21,44 @@ jobs:
       - name: Install latest galaxio
         run: go install github.com/galax-io/galaxio-cli/cmd/galaxio@latest
 
+      - name: Check template version bump
+        if: github.event_name == 'pull_request'
+        run: ./.github/scripts/check-template-version-bump.sh
+
       - name: Validate template pack
         run: galaxio template validate local:.
 
+      - name: Configure local registry
+        run: |
+          mkdir -p "$RUNNER_TEMP/registry"
+          cat > "$RUNNER_TEMP/registry/galaxio-registry.yaml" <<YAML
+          apiVersion: galaxio.io/v1
+          kind: TemplateRegistry
+          packs:
+            - name: gatling
+              source: local:${GITHUB_WORKSPACE}
+          YAML
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template configure --registry "local:$RUNNER_TEMP/registry"
+          galaxio template configure --show
+
       - name: Render scala-sbt smoke project
-        run: go run ./tools/template-smoke --template scala-sbt --out "$RUNNER_TEMP/scala-sbt"
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-sbt \
+            --destination "$RUNNER_TEMP/scala-sbt" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Render scala-sbt with set overrides
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-sbt \
+            --destination "$RUNNER_TEMP/scala-sbt-set" \
+            --values .github/template-smoke-values.yaml \
+            --set Name=orders-api-set \
+            --set BaseUrl=https://override.example.test
+          grep -R "orders-api-set" "$RUNNER_TEMP/scala-sbt-set"
+          grep -R "https://override.example.test" "$RUNNER_TEMP/scala-sbt-set/src/test/resources/simulation.conf"
 
       - name: Check rendered substitutions
         run: |

@@ -1,0 +1,88 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install galaxio
+        run: |
+          git clone --depth 1 https://github.com/galax-io/galaxio-cli "$RUNNER_TEMP/galaxio-cli"
+          cd "$RUNNER_TEMP/galaxio-cli"
+          go install ./cmd/galaxio
+
+      - name: Check template version bump
+        if: github.event_name == 'pull_request'
+        run: ./.github/scripts/check-template-version-bump.sh
+
+      - name: Validate template pack
+        run: galaxio template validate local:.
+
+      - name: Configure local registry
+        run: |
+          mkdir -p "$RUNNER_TEMP/registry"
+          cat > "$RUNNER_TEMP/registry/galaxio-registry.yaml" <<YAML
+          apiVersion: galaxio.io/v1
+          kind: TemplateRegistry
+          packs:
+            - name: gatling
+              source: local:${GITHUB_WORKSPACE}
+          YAML
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template configure --registry "local:$RUNNER_TEMP/registry"
+          galaxio template configure --show
+
+      - name: Render scala-sbt smoke project
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-sbt \
+            --destination "$RUNNER_TEMP/scala-sbt" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Render scala-sbt with set overrides
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-sbt \
+            --destination "$RUNNER_TEMP/scala-sbt-set" \
+            --values .github/template-smoke-values.yaml \
+            --set Name=orders-api-set \
+            --set NameWord=ordersapiset
+          grep -R "orders-api-set" "$RUNNER_TEMP/scala-sbt-set"
+          test -f "$RUNNER_TEMP/scala-sbt-set/src/test/scala/org/example/performance/ordersapiset/Debug.scala"
+
+      - name: Check rendered substitutions
+        run: |
+          test -f "$RUNNER_TEMP/scala-sbt/build.sbt"
+          test -f "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Debug.scala"
+          grep -R "orders-api" "$RUNNER_TEMP/scala-sbt"
+          grep -R "org.example.performance" "$RUNNER_TEMP/scala-sbt/src/test/scala"
+
+      - name: Compile scala-sbt rendered project
+        run: |
+          cd "$RUNNER_TEMP/scala-sbt"
+          sbt -batch Gatling/compile

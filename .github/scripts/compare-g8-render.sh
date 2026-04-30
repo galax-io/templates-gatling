@@ -4,12 +4,20 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 tmp="$(mktemp -d)"
 
+run_with_timeout() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 8m "$@"
+    return
+  fi
+  "$@"
+}
+
 git clone --depth 1 https://github.com/galax-io/gatling-template.g8 "${tmp}/gatling-template.g8"
 
 mkdir -p "${tmp}/g8-render"
 (
   cd "${tmp}/g8-render"
-  sbt new "file://${tmp}/gatling-template.g8" \
+  run_with_timeout sbt -batch new "file://${tmp}/gatling-template.g8" \
     --name=orders-api \
     --package=org.example.performance \
     --http=true \

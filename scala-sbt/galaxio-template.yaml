@@ -2,7 +2,7 @@ apiVersion: galaxio.io/v1
 kind: Template
 name: scala-sbt
 displayName: Gatling Scala sbt
-description: Gatling Scala project with sbt compatible with galax-io/gatling-template.g8 defaults
+description: Gatling Scala project with sbt
 engine: go-template
 tags:
   - gatling

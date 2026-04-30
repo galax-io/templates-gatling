@@ -166,7 +166,5 @@ Future extensions that fit the current shape:
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
 renders `scala-sbt` through `galaxio template init`, checks placeholder
-substitution, compiles the rendered Scala+sbt project with `sbt -batch
-Gatling/compile`, and verifies full rendered parity with
-[`galax-io/gatling-template.g8`](https://github.com/galax-io/gatling-template.g8)
-for the default HTTP-only template variant.
+substitution, and compiles the rendered Scala+sbt project with `sbt -batch
+Gatling/compile`.

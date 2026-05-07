@@ -5,19 +5,17 @@ import org.galaxio.gatling.config.SimulationConfig._
 import {{ .Package }}.{{ .NameWord }}.scenarios._
 
 class Stability extends Simulation {
-  val injector = Seq(
-    rampUsersPerSec(0) to intensity.toInt during rampDuration,
-    constantUsersPerSec(intensity.toInt) during stageDuration,
-  )
-
-  org.galaxio.gatling.utils.Utility.banner(injector)
 
   setUp(
     HttpScenario().inject(
-      injector,
+      // разгон
+      rampUsersPerSec(0) to intensity.toInt during rampDuration,
+      // полка
+      constantUsersPerSec(intensity.toInt) during stageDuration,
     ),
   ).protocols(
     httpProtocol,
+    // длительность теста = разгон + полка
   ).maxDuration(testDuration)
 
 }

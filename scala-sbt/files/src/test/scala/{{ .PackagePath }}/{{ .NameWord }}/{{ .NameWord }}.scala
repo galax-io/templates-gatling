@@ -2,12 +2,8 @@ package {{ .Package }}
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
-import {{ .Package }}.{{ .NameWord }}.Utility.debugMemoryAndOpts
 import org.galaxio.gatling.config.SimulationConfig._
 package object {{ .NameWord }} {
-
-  if (sys.env.get("DEBUG").exists(_.equalsIgnoreCase("true")))
-    debugMemoryAndOpts()
 
   // common http protocol params (eg headers, checks)
   val httpProtocol = http

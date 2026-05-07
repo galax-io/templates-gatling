@@ -13,26 +13,25 @@ src.test.scala.{{ .Package }}.{{ .NameWord }} - common test configs
 
 ## Test configuration
 
-Pass this params to JVM using -DparamName="paramValue" AND -Dconfig.override_with_env_vars=true
+Core runtime parameters live in `src/test/resources/simulation.conf` and can be overridden with JVM properties:
 
-```
-Gatling logs:
-CONSOLE_LOGGING=ON - turn on console logging
-FILE_LOGGING=ON - turn on logging in file "target/gatling/gatling.log"
-GRAYLOG_LOGGING=ON - turn on logging in Graylog
-    graylog params:
-        GRAYLOG_HOST - Graylog host
-        GRAYLOG_PORT - on which port Graylog input is
-        GRAYLOG_STREAM - the name of Graylog stream
-
-Gatling metrics in InfluxDB:
-GRAPHITE_HOST - influxdb with configured graphite plugin host
-GRAPHITE_PORT - see /etc/influxdb/influxdb.conf: bind-address
-INFLUX_PREFIX - see /etc/influxdb/influxdb.conf: database
+```bash
+-DbaseUrl=http://localhost
+-Dintensity="60 rpm"
+-DstagesNumber=2
+-DrampDuration="1 minute"
+-DstageDuration="5 minutes"
+-DtestDuration="15 minutes"
 ```
 
-Also, you can pass all params from Gatling-picatinny or use custom params
-read: https://github.com/galax-io/gatling-picatinny/blob/master/README.md
+Picatinny startup output is controlled by config:
+
+```hocon
+picatinny.startup.banner.enabled = true
+picatinny.diagnostics.enabled = false
+```
+
+Set diagnostics to `true` only when you need extra JVM/runtime details during troubleshooting.
 
 ## Debug
 
@@ -55,8 +54,12 @@ read: https://github.com/galax-io/gatling-picatinny/blob/master/README.md
 "Gatling/testOnly {{ .Package }}.{{ .NameWord }}.Stability" - stability test
 ```
 
+Both load simulations define `val injector = ...` and call `Utility.banner(injector)` so startup banner matches workload profile.
+
+If your dependency resolves to Picatinny `1.1.0` from Maven Central, this call may fail because `banner(injector)` is missing there.
+Use latest Picatinny build (for example local `publishLocal`) until next release is available.
+
 ## Help
 
-Telegram: @qa_load
-
+Picatinny docs: https://github.com/galax-io/gatling-picatinny
 Gatling docs: https://gatling.io/docs/gatling/reference/current/core/injection/

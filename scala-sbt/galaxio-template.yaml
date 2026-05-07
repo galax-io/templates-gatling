@@ -42,7 +42,43 @@ inputs:
     default: 2.5.6
   GatlingPicatinnyVersion:
     type: string
-    default: 1.0.1
+    default: 1.1.0
+  BaseUrl:
+    type: string
+    default: http://localhost
+  BaseAuthUrl:
+    type: string
+    default: http://localhost/auth
+  WsBaseUrl:
+    type: string
+    default: ws://localhost/ws
+  Intensity:
+    type: string
+    default: 60 rpm
+  StagesNumber:
+    type: string
+    default: "2"
+  RampDuration:
+    type: string
+    default: 1 second
+  StageDuration:
+    type: string
+    default: 1 second
+  TestDuration:
+    type: string
+    default: 5 seconds
+  Pacing:
+    type: string
+    default: 1 second
+  ScenarioName:
+    type: string
+    default: Synthetic business flow
+  StartupBannerEnabled:
+    type: string
+    default: "true"
+  DiagnosticsEnabled:
+    type: string
+    default: "false"
 files:
   - from: files
     to: .

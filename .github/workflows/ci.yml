@@ -10,6 +10,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PICATINNY_CI_VERSION: 1.1.0-ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,6 +31,12 @@ jobs:
 
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
+
+      - name: Publish latest gatling-picatinny to local Maven cache
+        run: |
+          git clone --depth 1 https://github.com/galax-io/gatling-picatinny "$RUNNER_TEMP/gatling-picatinny"
+          cd "$RUNNER_TEMP/gatling-picatinny"
+          sbt -batch "set ThisBuild / version := \"${PICATINNY_CI_VERSION}\"" publishLocal
 
       - name: Install galaxio
         run: |
@@ -62,7 +70,8 @@ jobs:
           export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
           galaxio template init gatling/scala-sbt \
             --destination "$RUNNER_TEMP/scala-sbt" \
-            --values .github/template-smoke-values.yaml
+            --values .github/template-smoke-values.yaml \
+            --set "GatlingPicatinnyVersion=${PICATINNY_CI_VERSION}"
 
       - name: Render scala-sbt with set overrides
         run: |
@@ -70,6 +79,7 @@ jobs:
           galaxio template init gatling/scala-sbt \
             --destination "$RUNNER_TEMP/scala-sbt-set" \
             --values .github/template-smoke-values.yaml \
+            --set "GatlingPicatinnyVersion=${PICATINNY_CI_VERSION}" \
             --set Name=orders-api-set \
             --set NameWord=ordersapiset
           grep -R "orders-api-set" "$RUNNER_TEMP/scala-sbt-set"
@@ -81,6 +91,9 @@ jobs:
           test -f "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Debug.scala"
           grep -R "orders-api" "$RUNNER_TEMP/scala-sbt"
           grep -R "org.example.performance" "$RUNNER_TEMP/scala-sbt/src/test/scala"
+          grep -R "gatling-picatinny\" % \"${PICATINNY_CI_VERSION}" "$RUNNER_TEMP/scala-sbt/project/Dependencies.scala"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Stability.scala"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/MaxPerformance.scala"
 
       - name: Compile scala-sbt rendered project
         run: |

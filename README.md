@@ -13,11 +13,10 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.2.0
+version: 0.3.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.2.0
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
@@ -59,6 +58,7 @@ Useful inputs:
 | `PackagePath` | `org/galaxio/performance` |
 | `ScalaVersion` | `2.13.18` |
 | `GatlingVersion` | `3.11.5` |
+| `GatlingPicatinnyVersion` | `1.1.0` |
 
 ## Placeholder Syntax
 
@@ -153,7 +153,35 @@ sbt -batch Gatling/compile
 ```
 
 When changing files under `scala-sbt/`, bump the `scala-sbt` template version in
-`galaxio-pack.yaml`. CI enforces this.
+`galaxio-pack.yaml` top-level `version`. CI enforces this.
+
+Release tags drive immutable template consumption. After merging release changes,
+create a repository tag such as `v0.3.0`; the release workflow creates GitHub
+Release notes. Registries keep pointing at the repository:
+
+```yaml
+source: github:galax-io/templates-gatling
+```
+
+The CLI uses the pack `version` to render from the matching release tag.
+
+## Compatibility
+
+`scala-sbt` template uses `Utility.banner(injector)` from latest Picatinny API.
+
+- With Maven Central `org.galaxio:gatling-picatinny_2.13:1.1.0`, compile fails because `Utility.banner` is nullary.
+- With latest Picatinny main (published locally as `1.1.0-ci`), compile succeeds.
+
+Local quick test:
+
+```bash
+git clone --depth 1 https://github.com/galax-io/gatling-picatinny
+cd gatling-picatinny
+sbt -batch 'set ThisBuild / version := "1.1.0-ci"' publishLocal
+
+cd /path/to/rendered/project
+sbt -batch Gatling/compile
+```
 
 Future extensions that fit the current shape:
 
@@ -165,6 +193,7 @@ Future extensions that fit the current shape:
 ## Validation
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
-renders `scala-sbt` through `galaxio template init`, checks placeholder
-substitution, and compiles the rendered Scala+sbt project with `sbt -batch
-Gatling/compile`.
+publishes latest Picatinny main to `ivyLocal` as `1.1.0-ci`, renders `scala-sbt`
+through `galaxio template init` with `GatlingPicatinnyVersion=1.1.0-ci`, checks
+placeholder substitution, and compiles the rendered Scala+sbt project with `sbt
+-batch Gatling/compile`.

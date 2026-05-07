@@ -6,6 +6,7 @@ import org.galaxio.gatling.config.SimulationConfig._
 import {{ .Package }}.{{ .NameWord }}.scenarios._
 
 class Debug extends Simulation {
+  org.galaxio.gatling.utils.Utility.diagnostics()
 
   // proxy is required on localhost:8888
 

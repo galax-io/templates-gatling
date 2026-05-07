@@ -13,10 +13,11 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.3.0
+version: 0.1.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
+    version: 0.1.0
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
@@ -152,18 +153,22 @@ cd "$tmpdir/scala-sbt"
 sbt -batch Gatling/compile
 ```
 
-When changing files under `scala-sbt/`, bump the `scala-sbt` template version in
-`galaxio-pack.yaml` top-level `version`. CI enforces this.
+When changing files under `scala-sbt/`, bump both:
+- top-level pack `version`
+- `templates[].version` for `scala-sbt`
+
+CI enforces both values.
 
 Release tags drive immutable template consumption. After merging release changes,
-create a repository tag such as `v0.3.0`; the release workflow creates GitHub
+create a repository tag such as `v0.1.0`; the release workflow creates GitHub
 Release notes. Registries keep pointing at the repository:
 
 ```yaml
 source: github:galax-io/templates-gatling
 ```
 
-The CLI uses the pack `version` to render from the matching release tag.
+The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows template
+`version` in `template list`.
 
 ## Compatibility
 

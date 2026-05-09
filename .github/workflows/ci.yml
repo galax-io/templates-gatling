@@ -176,3 +176,27 @@ jobs:
           cd "$RUNNER_TEMP/kotlin-maven"
           chmod +x mvnw
           ./mvnw -q test-compile
+
+      - name: Render java-gradle smoke project
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/java-gradle \
+            --destination "$RUNNER_TEMP/java-gradle" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Check rendered java-gradle substitutions
+        run: |
+          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
+          test -f "$RUNNER_TEMP/java-gradle/build.gradle"
+          test -f "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/Debug.java"
+          grep -R "orders-api" "$RUNNER_TEMP/java-gradle"
+          grep -R "org.example.performance" "$RUNNER_TEMP/java-gradle/src/gatling/java"
+          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/java-gradle/build.gradle"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/Stability.java"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/MaxPerformance.java"
+
+      - name: Compile java-gradle rendered project
+        run: |
+          cd "$RUNNER_TEMP/java-gradle"
+          chmod +x gradlew
+          ./gradlew --no-daemon gatlingClasses

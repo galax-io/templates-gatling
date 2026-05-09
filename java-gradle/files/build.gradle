@@ -1,0 +1,34 @@
+plugins {
+  id 'java'
+  id 'io.gatling.gradle' version '{{ .GatlingGradlePluginVersion }}'
+}
+
+group = '{{ .Package }}'
+version = '0.1.0'
+
+java {
+  sourceCompatibility = JavaVersion.toVersion('{{ .JavaVersion }}')
+  targetCompatibility = JavaVersion.toVersion('{{ .JavaVersion }}')
+}
+
+gatling {
+  gatlingVersion = '{{ .GatlingVersion }}'
+  includeMainOutput = false
+  includeTestOutput = false
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.release = Integer.parseInt('{{ .JavaVersion }}')
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  gatlingImplementation "org.galaxio:gatling-picatinny_2.13:{{ .GatlingPicatinnyVersion }}"
+  gatlingImplementation "io.gatling.highcharts:gatling-charts-highcharts:{{ .GatlingVersion }}"
+  gatlingImplementation "io.gatling:gatling-test-framework:{{ .GatlingVersion }}"
+  gatlingImplementation "org.codehaus.janino:janino:3.1.12"
+}

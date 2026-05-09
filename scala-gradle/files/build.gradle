@@ -1,0 +1,41 @@
+plugins {
+  id 'scala'
+  id 'io.gatling.gradle' version '{{ .GatlingGradlePluginVersion }}'
+}
+
+group = '{{ .Package }}'
+version = '0.1.0'
+
+java {
+  sourceCompatibility = JavaVersion.toVersion('{{ .JavaVersion }}')
+  targetCompatibility = JavaVersion.toVersion('{{ .JavaVersion }}')
+}
+
+gatling {
+  gatlingVersion = '{{ .GatlingVersion }}'
+  scalaVersion = '{{ .ScalaVersion }}'
+  includeMainOutput = false
+  includeTestOutput = false
+}
+
+tasks.withType(ScalaCompile).configureEach {
+  scalaCompileOptions.forkOptions.with {
+    jvmArgs = ['-Xss100m']
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.release = Integer.parseInt('{{ .JavaVersion }}')
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  gatling("org.galaxio:gatling-picatinny_2.13:{{ .GatlingPicatinnyVersion }}")
+  gatling("io.gatling.highcharts:gatling-charts-highcharts:{{ .GatlingVersion }}")
+  gatling("io.gatling:gatling-test-framework:{{ .GatlingVersion }}")
+  gatling("org.codehaus.janino:janino:3.1.12")
+}

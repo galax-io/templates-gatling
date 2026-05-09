@@ -1,0 +1,13 @@
+/target/
+/.settings
+/.classpath
+/.idea
+/.vscode
+/.project
+/project/project/
+/project/target/
+/report/
+/build/
+/.gradle/
+*.log
+/results/

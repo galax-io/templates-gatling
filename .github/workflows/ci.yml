@@ -90,3 +90,39 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/scala-sbt"
           sbt -batch Gatling/compile
+
+      - name: Render scala-gradle smoke project
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-gradle \
+            --destination "$RUNNER_TEMP/scala-gradle" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Render scala-gradle with set overrides
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/scala-gradle \
+            --destination "$RUNNER_TEMP/scala-gradle-set" \
+            --values .github/template-smoke-values.yaml \
+            --set Name=orders-api-gradle \
+            --set NameWord=ordersapigradle
+          grep -R "orders-api-gradle" "$RUNNER_TEMP/scala-gradle-set"
+          test -f "$RUNNER_TEMP/scala-gradle-set/src/gatling/scala/org/example/performance/ordersapigradle/Debug.scala"
+
+      - name: Check scala-gradle rendered substitutions
+        run: |
+          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
+          test -f "$RUNNER_TEMP/scala-gradle/build.gradle"
+          test -f "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/Debug.scala"
+          test -f "$RUNNER_TEMP/scala-gradle/gradlew"
+          grep -R "orders-api" "$RUNNER_TEMP/scala-gradle"
+          grep -R "org.example.performance" "$RUNNER_TEMP/scala-gradle/src/gatling/scala"
+          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/scala-gradle/build.gradle"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/Stability.scala"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/MaxPerformance.scala"
+
+      - name: Compile scala-gradle rendered project
+        run: |
+          cd "$RUNNER_TEMP/scala-gradle"
+          chmod +x gradlew
+          ./gradlew --no-daemon gatlingClasses

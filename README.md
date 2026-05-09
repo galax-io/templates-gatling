@@ -13,7 +13,7 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.1.1
+version: 0.2.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
@@ -21,6 +21,8 @@ templates:
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
+    version: 0.2.0
+    path: java-maven
     description: Gatling Java project with Maven
   - name: kotlin-maven
     description: Gatling Kotlin project with Maven
@@ -153,11 +155,16 @@ cd "$tmpdir/scala-sbt"
 sbt -batch Gatling/compile
 ```
 
-When changing files under `scala-sbt/`, bump both:
+When changing files under a renderable template directory, bump both:
 - top-level pack `version`
-- `templates[].version` for `scala-sbt`
+- `templates[].version` for the changed template
 
-CI enforces both values.
+Versioning rule:
+- `fix`: patch bump, for example `0.2.0 -> 0.2.1`
+- `feat`: minor bump, for example `0.2.0 -> 0.3.0`
+- new renderable templates also start with the current feature minor version
+
+CI reads the latest commit subject and enforces `fix` vs `feat` bump policy.
 
 Release tags drive immutable template consumption. After merging release changes,
 create a repository tag such as `v0.1.0`; the release workflow creates GitHub

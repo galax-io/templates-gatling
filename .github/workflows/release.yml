@@ -18,22 +18,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Sync pack/template versions from tag
+      - name: Sync pack version from tag
         env:
           TAG: ${{ github.ref_name }}
         run: |
           VERSION="${TAG#v}"
           awk -v v="$VERSION" '
-            BEGIN { in_template = 0 }
             /^version:/ { print "version: " v; next }
-            /^  - name: scala-sbt$/ { in_template = 1; print; next }
-            in_template && /^    version:/ { print "    version: " v; in_template = 0; next }
             { print }
           ' galaxio-pack.yaml > galaxio-pack.yaml.tmp
           mv galaxio-pack.yaml.tmp galaxio-pack.yaml
 
           sed -i "s/^version: [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/version: ${VERSION}/" README.md
-          sed -i "/- name: scala-sbt/{n;s/^    version: .*/    version: ${VERSION}/;}" README.md
           sed -i "s/v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/v${VERSION}/g" README.md
 
       - name: Commit synced versions to main

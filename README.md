@@ -13,11 +13,11 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.1.0
+version: 0.1.1
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.1.0
+    version: 0.1.1
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
@@ -59,7 +59,7 @@ Useful inputs:
 | `PackagePath` | `org/galaxio/performance` |
 | `ScalaVersion` | `2.13.18` |
 | `GatlingVersion` | `3.11.5` |
-| `GatlingPicatinnyVersion` | `1.1.0` |
+| `GatlingPicatinnyVersion` | `1.2.0` |
 
 ## Placeholder Syntax
 
@@ -172,21 +172,9 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
-`scala-sbt` template uses `Utility.banner(injector)` from latest Picatinny API.
-
-- With Maven Central `org.galaxio:gatling-picatinny_2.13:1.1.0`, compile fails because `Utility.banner` is nullary.
-- With latest Picatinny main (published locally as `1.1.0-ci`), compile succeeds.
-
-Local quick test:
-
-```bash
-git clone --depth 1 https://github.com/galax-io/gatling-picatinny
-cd gatling-picatinny
-sbt -batch 'set ThisBuild / version := "1.1.0-ci"' publishLocal
-
-cd /path/to/rendered/project
-sbt -batch Gatling/compile
-```
+`scala-sbt` template targets Picatinny `1.2.0` by default. That release includes
+`Utility.banner(injector)` and the current startup diagnostics/config flow used
+by the template.
 
 Future extensions that fit the current shape:
 
@@ -198,7 +186,6 @@ Future extensions that fit the current shape:
 ## Validation
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
-publishes latest Picatinny main to `ivyLocal` as `1.1.0-ci`, renders `scala-sbt`
-through `galaxio template init` with `GatlingPicatinnyVersion=1.1.0-ci`, checks
-placeholder substitution, and compiles the rendered Scala+sbt project with `sbt
--batch Gatling/compile`.
+renders `scala-sbt` through `galaxio template init` with the default Picatinny
+version, checks placeholder substitution, and compiles the rendered Scala+sbt
+project with `sbt -batch Gatling/compile`.

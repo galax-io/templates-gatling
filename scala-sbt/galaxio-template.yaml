@@ -42,7 +42,7 @@ inputs:
     default: 2.5.6
   GatlingPicatinnyVersion:
     type: string
-    default: 1.1.0
+    default: 1.2.0
   BaseUrl:
     type: string
     default: http://localhost

@@ -167,7 +167,7 @@ jobs:
           grep -R "orders-api" "$RUNNER_TEMP/kotlin-maven"
           grep -R "org.example.performance" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin"
           grep -R "<artifactId>gatling-picatinny_2.13</artifactId>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
-          grep -R "<version>${expected_picatinny_version}</version>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
+          grep -R "<picatinny.version>${expected_picatinny_version}</picatinny.version>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
           grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/Stability.kt"
           grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/MaxPerformance.kt"
 

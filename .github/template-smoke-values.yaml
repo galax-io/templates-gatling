@@ -1,0 +1,22 @@
+Name: orders-api
+NameWord: ordersapi
+Package: org.example.performance
+PackagePath: org/example/performance
+ScalaVersion: 2.13.18
+SbtVersion: 1.12.2
+GatlingVersion: 3.11.5
+SbtGatlingVersion: 4.18.0
+SbtScalafmtVersion: 2.5.6
+GatlingPicatinnyVersion: 1.2.0
+BaseUrl: http://localhost
+BaseAuthUrl: http://localhost/auth
+WsBaseUrl: ws://localhost/ws
+Intensity: 60 rpm
+StagesNumber: "2"
+RampDuration: 1 second
+StageDuration: 1 second
+TestDuration: 5 seconds
+Pacing: 1 second
+ScenarioName: Orders smoke flow
+StartupBannerEnabled: "true"
+DiagnosticsEnabled: "false"

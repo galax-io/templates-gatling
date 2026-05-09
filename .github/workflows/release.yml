@@ -1,0 +1,56 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-release:
+    name: sync-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync pack/template versions from tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          awk -v v="$VERSION" '
+            BEGIN { in_template = 0 }
+            /^version:/ { print "version: " v; next }
+            /^  - name: scala-sbt$/ { in_template = 1; print; next }
+            in_template && /^    version:/ { print "    version: " v; in_template = 0; next }
+            { print }
+          ' galaxio-pack.yaml > galaxio-pack.yaml.tmp
+          mv galaxio-pack.yaml.tmp galaxio-pack.yaml
+
+          sed -i "s/^version: [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/version: ${VERSION}/" README.md
+          sed -i "/- name: scala-sbt/{n;s/^    version: .*/    version: ${VERSION}/;}" README.md
+          sed -i "s/v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/v${VERSION}/g" README.md
+
+      - name: Commit synced versions to main
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add galaxio-pack.yaml README.md
+          git commit -m "chore(release): sync versions for ${TAG}"
+          git push origin HEAD:main
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes

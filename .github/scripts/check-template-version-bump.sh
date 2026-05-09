@@ -87,7 +87,7 @@ template_version_for() {
 old_manifest="$(mktemp)"
 git show "${base}:galaxio-pack.yaml" > "${old_manifest}"
 
-templates=("scala-sbt" "java-maven")
+templates=("scala-sbt" "java-maven" "kotlin-maven")
 
 for template in "${templates[@]}"; do
   changed_files="$(git diff --name-only "${base}"...HEAD -- "${template}" || true)"

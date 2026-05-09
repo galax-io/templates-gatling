@@ -56,9 +56,6 @@ Set diagnostics to `true` only when you need extra JVM/runtime details during tr
 
 Both load simulations define `val injector = ...` and call `Utility.banner(injector)` so startup banner matches workload profile.
 
-If your dependency resolves to Picatinny `1.1.0` from Maven Central, this call may fail because `banner(injector)` is missing there.
-Use latest Picatinny build (for example local `publishLocal`) until next release is available.
-
 ## Help
 
 Picatinny docs: https://github.com/galax-io/gatling-picatinny

@@ -13,7 +13,7 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.2.0
+version: 0.3.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
@@ -21,6 +21,8 @@ templates:
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
+    version: 0.1.0
+    path: java-maven
     description: Gatling Java project with Maven
   - name: kotlin-maven
     description: Gatling Kotlin project with Maven

@@ -1,20 +1,12 @@
 name: release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: Existing release tag to publish, for example v0.6.0
+      version:
+        description: "Version to release, for example 0.7.0"
         required: true
         type: string
-      sync_main:
-        description: Sync pack/README versions back to main
-        required: false
-        default: false
-        type: boolean
 
 concurrency:
   group: release-publish
@@ -24,70 +16,72 @@ permissions:
   contents: write
 
 jobs:
-  sync-and-release:
-    name: sync-and-release
+  release:
+    name: release
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve release inputs
-        id: vars
+      - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ inputs.tag }}"
-            SYNC_MAIN="${{ inputs.sync_main }}"
-          else
-            TAG="${{ github.ref_name }}"
-            SYNC_MAIN=true
+          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be in semver format X.Y.Z, got: ${VERSION}" >&2
+            exit 1
           fi
 
-          {
-            echo "tag=${TAG}"
-            echo "version=${TAG#v}"
-            echo "sync_main=${SYNC_MAIN}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
-          ref: ${{ steps.vars.outputs.tag }}
 
-      - name: Sync pack version from tag
-        if: steps.vars.outputs.sync_main == 'true'
+      - name: Check tag does not already exist
         env:
-          TAG: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ inputs.version }}
         run: |
-          VERSION="${TAG#v}"
-          awk -v v="$VERSION" '
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists." >&2
+            exit 1
+          fi
+
+      - name: Bump version in galaxio-pack.yaml and README
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          awk -v v="${VERSION}" '
             /^version:/ { print "version: " v; next }
             { print }
           ' galaxio-pack.yaml > galaxio-pack.yaml.tmp
           mv galaxio-pack.yaml.tmp galaxio-pack.yaml
 
-          sed -i "s/^version: [0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/version: ${VERSION}/" README.md
-          sed -i "s/v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+/v${VERSION}/g" README.md
+          sed -i "s/^version: [0-9]\+\.[0-9]\+\.[0-9]\+/version: ${VERSION}/" README.md
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" README.md
 
-      - name: Commit synced versions to main
-        if: steps.vars.outputs.sync_main == 'true'
+      - name: Commit version bump
         env:
-          TAG: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ inputs.version }}
         run: |
-          if git diff --quiet; then
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add galaxio-pack.yaml README.md
-          git commit -m "chore(release): sync versions for ${TAG}"
-          git push origin HEAD:main
+          git diff --cached --exit-code && {
+            echo "No changes to commit — is the version already ${VERSION}?" >&2
+            exit 1
+          }
+          git commit -m "chore(release): bump version to v${VERSION}"
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git tag "v${VERSION}"
+          git push origin main "v${VERSION}"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ inputs.version }}
         run: |
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists."
-            exit 0
-          fi
-
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes

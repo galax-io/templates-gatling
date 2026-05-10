@@ -12,33 +12,43 @@ inputs:
   Name:
     type: string
     default: myservice
+    description: Project name used by Maven and README.
   NameWord:
     type: string
     default: myservice
+    description: Project name formatted as a Kotlin package segment.
   Package:
     type: string
     default: org.galaxio.performance
+    description: Kotlin package for generated Gatling sources.
   PackagePath:
     type: string
     default: org/galaxio/performance
+    description: Filesystem path matching Package.
   JavaVersion:
     type: string
     default: "17"
+    description: Java compiler release version.
   KotlinVersion:
     type: string
     default: 2.2.20
+    description: Kotlin compiler version.
   MavenVersion:
     type: string
     default: 3.9.15
+    description: Apache Maven version for the Maven Wrapper.
   GatlingVersion:
     type: string
     default: 3.11.5
+    description: Gatling framework version.
   GatlingMavenPluginVersion:
     type: string
     default: 4.10.2
+    description: Gatling Maven plugin version.
   GatlingPicatinnyVersion:
     type: string
     default: 1.2.0
+    description: Galaxio Gatling Picatinny library version.
   BaseUrl:
     type: string
     default: http://localhost
@@ -69,6 +79,54 @@ inputs:
   ScenarioName:
     type: string
     default: Synthetic business flow
+  KafkaPluginEnabled:
+    type: string
+    default: "false"
+  KafkaPluginVersion:
+    type: string
+    default: 1.0.0-RC2
+  KafkaTopic:
+    type: string
+    default: myTopic
+  KafkaUrl:
+    type: string
+    default: localhost:9092
+  JdbcPluginEnabled:
+    type: string
+    default: "false"
+  JdbcPluginVersion:
+    type: string
+    default: 0.14.2
+  DbUrl:
+    type: string
+    default: jdbc:postgresql://localhost:5432/postgres
+  DbUser:
+    type: string
+    default: postgres
+  DbPassword:
+    type: string
+    default: postgres
+  AmqpPluginEnabled:
+    type: string
+    default: "false"
+  AmqpPluginVersion:
+    type: string
+    default: 0.14.0
+  AmqpHost:
+    type: string
+    default: localhost
+  AmqpPort:
+    type: string
+    default: "5672"
+  AmqpLogin:
+    type: string
+    default: guest
+  AmqpPassword:
+    type: string
+    default: guest
+  AmqpQueue:
+    type: string
+    default: my_queue
   StartupBannerEnabled:
     type: string
     default: "true"
@@ -78,3 +136,12 @@ inputs:
 files:
   - from: files
     to: .
+  - from: plugins/kafka
+    to: .
+    if: '{{ .KafkaPluginEnabled }}'
+  - from: plugins/jdbc
+    to: .
+    if: '{{ .JdbcPluginEnabled }}'
+  - from: plugins/amqp
+    to: .
+    if: '{{ .AmqpPluginEnabled }}'

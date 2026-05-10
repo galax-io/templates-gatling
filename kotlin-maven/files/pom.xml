@@ -29,6 +29,30 @@
             <version>${picatinny.version}</version>
             <scope>test</scope>
         </dependency>
+{{- if eq .KafkaPluginEnabled "true" }}
+        <dependency>
+            <groupId>org.galaxio</groupId>
+            <artifactId>gatling-kafka-plugin_2.13</artifactId>
+            <version>{{ .KafkaPluginVersion }}</version>
+            <scope>test</scope>
+        </dependency>
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+        <dependency>
+            <groupId>org.galaxio</groupId>
+            <artifactId>gatling-jdbc-plugin_2.13</artifactId>
+            <version>{{ .JdbcPluginVersion }}</version>
+            <scope>test</scope>
+        </dependency>
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+        <dependency>
+            <groupId>org.galaxio</groupId>
+            <artifactId>gatling-amqp-plugin_2.13</artifactId>
+            <version>{{ .AmqpPluginVersion }}</version>
+            <scope>test</scope>
+        </dependency>
+{{- end }}
         <dependency>
             <groupId>io.gatling.highcharts</groupId>
             <artifactId>gatling-charts-highcharts</artifactId>
@@ -48,6 +72,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+{{- if eq .KafkaPluginEnabled "true" }}
+    <repositories>
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+    </repositories>
+{{- end }}
 
     <build>
         <plugins>

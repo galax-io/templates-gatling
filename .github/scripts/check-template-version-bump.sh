@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-base_ref="${GITHUB_BASE_REF:-main}"
-base="origin/${base_ref}"
+base_ref="${BASE_REF:-${GITHUB_BASE_REF:-main}}"
+base="${BASE:-origin/${base_ref}}"
 
-git fetch origin "${base_ref}" --depth=1
+if [[ "${SKIP_FETCH:-0}" != "1" ]]; then
+  git fetch origin "${base_ref}" --depth=1
+fi
 
 change_subject="$(git log -1 --pretty=%s)"
 change_kind="other"
@@ -83,17 +85,44 @@ template_version_for() {
   ' template_name="$template_name" "$manifest"
 }
 
+template_path_for() {
+  local template_name="$1"
+  local manifest="$2"
+  awk '
+    $1 == "-" && $2 == "name:" && $3 == template_name { in_template = 1; next }
+    in_template && $1 == "-" && $2 == "name:" { exit }
+    in_template && $1 == "path:" { print $2; exit }
+  ' template_name="$template_name" "$manifest"
+}
+
+template_names_for() {
+  local manifest="$1"
+  awk '$1 == "-" && $2 == "name:" { print $3 }' "$manifest"
+}
+
 old_manifest="$(mktemp)"
 git show "${base}:galaxio-pack.yaml" > "${old_manifest}"
 
 old_pack_version="$(pack_version_for "${old_manifest}")"
 new_pack_version="$(pack_version_for galaxio-pack.yaml)"
 
-templates=(scala-sbt scala-gradle java-maven kotlin-maven java-gradle kotlin-gradle)
+templates=()
+while IFS= read -r template_name; do
+  templates+=("${template_name}")
+done < <(
+  {
+    template_names_for "${old_manifest}"
+    template_names_for galaxio-pack.yaml
+  } | awk 'NF && !seen[$0]++'
+)
 changed_any=0
 
 for template in "${templates[@]}"; do
-  changed_files="$(git diff --name-only "${base}"...HEAD -- "${template}" || true)"
+  old_template_path="$(template_path_for "${template}" "${old_manifest}")"
+  new_template_path="$(template_path_for "${template}" galaxio-pack.yaml)"
+  template_path="${new_template_path:-${old_template_path:-${template}}}"
+
+  changed_files="$(git diff --name-only "${base}"...HEAD -- "${template_path}" || true)"
   if [[ -z "${changed_files}" ]]; then
     continue
   fi

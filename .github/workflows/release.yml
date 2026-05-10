@@ -39,9 +39,11 @@ jobs:
             SYNC_MAIN=true
           fi
 
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
-          echo "sync_main=${SYNC_MAIN}" >> "$GITHUB_OUTPUT"
+          {
+            echo "tag=${TAG}"
+            echo "version=${TAG#v}"
+            echo "sync_main=${SYNC_MAIN}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v4

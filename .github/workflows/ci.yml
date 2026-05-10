@@ -151,3 +151,28 @@ jobs:
           cd "$RUNNER_TEMP/java-maven"
           chmod +x mvnw
           ./mvnw -q test-compile
+
+      - name: Render kotlin-maven smoke project
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/kotlin-maven \
+            --destination "$RUNNER_TEMP/kotlin-maven" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Check rendered kotlin-maven substitutions
+        run: |
+          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
+          test -f "$RUNNER_TEMP/kotlin-maven/pom.xml"
+          test -f "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/Debug.kt"
+          grep -R "orders-api" "$RUNNER_TEMP/kotlin-maven"
+          grep -R "org.example.performance" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin"
+          grep -R "<artifactId>gatling-picatinny_2.13</artifactId>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
+          grep -R "<picatinny.version>${expected_picatinny_version}</picatinny.version>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/Stability.kt"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/MaxPerformance.kt"
+
+      - name: Compile kotlin-maven rendered project
+        run: |
+          cd "$RUNNER_TEMP/kotlin-maven"
+          chmod +x mvnw
+          ./mvnw -q test-compile

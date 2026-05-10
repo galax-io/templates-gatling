@@ -1,0 +1,14 @@
+name: Template Smoke
+description: Render, verify, and compile one base template smoke project.
+
+inputs:
+  template:
+    description: Template name, for example scala-sbt or java-maven.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Run template smoke script
+      shell: bash
+      run: bash "${GITHUB_ACTION_PATH}/../../scripts/run-template-smoke.sh" "${{ inputs.template }}"

@@ -5,9 +5,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -18,6 +21,119 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_templates: ${{ steps.matrix.outputs.has_templates }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - '.github/**'
+              - 'galaxio-pack.yaml'
+              - 'README.md'
+            scala_sbt:
+              - 'scala-sbt/**'
+            scala_gradle:
+              - 'scala-gradle/**'
+            java_maven:
+              - 'java-maven/**'
+            kotlin_maven:
+              - 'kotlin-maven/**'
+            java_gradle:
+              - 'java-gradle/**'
+            kotlin_gradle:
+              - 'kotlin-gradle/**'
+
+      - name: Build template matrix
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SHARED_CHANGED: ${{ steps.filter.outputs.shared }}
+          SCALA_SBT_CHANGED: ${{ steps.filter.outputs.scala_sbt }}
+          SCALA_GRADLE_CHANGED: ${{ steps.filter.outputs.scala_gradle }}
+          JAVA_MAVEN_CHANGED: ${{ steps.filter.outputs.java_maven }}
+          KOTLIN_MAVEN_CHANGED: ${{ steps.filter.outputs.kotlin_maven }}
+          JAVA_GRADLE_CHANGED: ${{ steps.filter.outputs.java_gradle }}
+          KOTLIN_GRADLE_CHANGED: ${{ steps.filter.outputs.kotlin_gradle }}
+        run: |
+          selected=()
+          all_templates=(scala-sbt scala-gradle java-maven kotlin-maven java-gradle kotlin-gradle)
+
+          if [[ "${EVENT_NAME}" != "pull_request" || "${SHARED_CHANGED:-false}" == "true" ]]; then
+            selected=("${all_templates[@]}")
+          else
+            [[ "${SCALA_SBT_CHANGED:-false}" == "true" ]] && selected+=(scala-sbt)
+            [[ "${SCALA_GRADLE_CHANGED:-false}" == "true" ]] && selected+=(scala-gradle)
+            [[ "${JAVA_MAVEN_CHANGED:-false}" == "true" ]] && selected+=(java-maven)
+            [[ "${KOTLIN_MAVEN_CHANGED:-false}" == "true" ]] && selected+=(kotlin-maven)
+            [[ "${JAVA_GRADLE_CHANGED:-false}" == "true" ]] && selected+=(java-gradle)
+            [[ "${KOTLIN_GRADLE_CHANGED:-false}" == "true" ]] && selected+=(kotlin-gradle)
+          fi
+
+          if [[ "${#selected[@]}" -eq 0 ]]; then
+            echo 'has_templates=false' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          objects=()
+          for template in "${selected[@]}"; do
+            case "${template}" in
+              scala-sbt)
+                build_tool="sbt"
+                ;;
+              *-maven)
+                build_tool="maven"
+                ;;
+              *)
+                build_tool="gradle"
+                ;;
+            esac
+
+            objects+=("{\"template\":\"${template}\",\"build_tool\":\"${build_tool}\"}")
+          done
+
+          matrix_json="$(printf '%s\n' "${objects[@]}" | jq -cs '{include: .}')"
+          echo 'has_templates=true' >> "$GITHUB_OUTPUT"
+          echo "matrix=${matrix_json}" >> "$GITHUB_OUTPUT"
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: true
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.8
+
+      - name: Run shellcheck
+        run: shellcheck .github/scripts/*.sh
+
+      - name: Run actionlint
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -color
+
   versioning:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -69,6 +185,7 @@ jobs:
     timeout-minutes: 10
     needs:
       - build-galaxio
+      - lint
       - versioning
     steps:
       - name: Checkout
@@ -89,34 +206,18 @@ jobs:
         run: galaxio template validate local:.
 
   template-smoke:
+    if: needs.changes.outputs.has_templates == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs:
+      - changes
       - build-galaxio
+      - lint
       - pack-validate
       - versioning
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - template: scala-sbt
-            cache: sbt
-            needs_sbt: true
-          - template: scala-gradle
-            cache: gradle
-            needs_sbt: false
-          - template: java-maven
-            cache: maven
-            needs_sbt: false
-          - template: kotlin-maven
-            cache: maven
-            needs_sbt: false
-          - template: java-gradle
-            cache: gradle
-            needs_sbt: false
-          - template: kotlin-gradle
-            cache: gradle
-            needs_sbt: false
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     name: smoke-${{ matrix.template }}
     steps:
       - name: Checkout
@@ -138,26 +239,58 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-          cache: ${{ matrix.cache }}
 
-      - name: Cache coursier and ivy
-        if: matrix.needs_sbt
+      - name: Cache Maven repository
+        if: matrix.build_tool == 'maven'
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/pom.xml', matrix.template), format('{0}/files/.mvn/wrapper/maven-wrapper.properties', matrix.template)) }}
+          restore-keys: |
+            ${{ runner.os }}-maven-${{ matrix.template }}-
+            ${{ runner.os }}-maven-
+
+      - name: Cache Gradle
+        if: matrix.build_tool == 'gradle'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/build.gradle', matrix.template), format('{0}/files/build.gradle.kts', matrix.template), format('{0}/files/gradle/wrapper/gradle-wrapper.properties', matrix.template)) }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-${{ matrix.template }}-
+            ${{ runner.os }}-gradle-
+
+      - name: Cache sbt, ivy, and coursier
+        if: matrix.build_tool == 'sbt'
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/coursier
             ~/.ivy2/cache
             ~/.sbt
-          key: ${{ runner.os }}-sbt-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/**', matrix.template)) }}
+          key: ${{ runner.os }}-sbt-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/**', matrix.template), format('{0}/project/**', matrix.template)) }}
           restore-keys: |
+            ${{ runner.os }}-sbt-${{ matrix.template }}-
             ${{ runner.os }}-sbt-
 
       - name: Setup sbt
-        if: matrix.needs_sbt
+        if: matrix.build_tool == 'sbt'
         uses: sbt/setup-sbt@v1
 
       - name: Run template smoke test
-        run: bash ./.github/scripts/run-template-smoke.sh "${{ matrix.template }}"
+        uses: ./.github/actions/template-smoke
+        with:
+          template: ${{ matrix.template }}
+
+      - name: Upload compile log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compile-log-${{ matrix.template }}
+          path: ${{ runner.temp }}/rendered/${{ matrix.template }}/compile.log
+          if-no-files-found: ignore
 
       - name: Upload rendered project on failure
         if: failure()

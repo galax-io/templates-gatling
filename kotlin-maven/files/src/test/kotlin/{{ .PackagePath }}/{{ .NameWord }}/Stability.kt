@@ -14,7 +14,7 @@ class Stability : Simulation() {
             rampUsersPerSec(0.0).to(SimulationConfig.intensity())
                 .during(SimulationConfig.rampDuration()),
             constantUsersPerSec(SimulationConfig.intensity())
-                .during(SimulationConfig.testDuration())
+                .during(SimulationConfig.stageDuration())
         )
 
         Utility.banner(injectionProfile)
@@ -22,7 +22,9 @@ class Stability : Simulation() {
         setUp(
             HttpScenario.create()
                 .injectOpen(*injectionProfile)
-        ).protocols(Performance.httpProtocol)
+        ).protocols(
+            Performance.httpProtocol
+        )
             .maxDuration(SimulationConfig.testDuration())
     }
 }

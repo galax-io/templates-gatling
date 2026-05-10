@@ -1,7 +1,7 @@
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.6.0
+version: 0.7.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
@@ -21,7 +21,7 @@ templates:
     path: scala-gradle
     description: Gatling Scala project with Gradle
   - name: java-gradle
-    version: 0.1.0
+    version: 0.2.0
     path: java-gradle
     description: Gatling Java project with Gradle
   - name: kotlin-gradle

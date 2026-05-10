@@ -200,3 +200,27 @@ jobs:
           cd "$RUNNER_TEMP/java-gradle"
           chmod +x gradlew
           ./gradlew --no-daemon gatlingClasses
+
+      - name: Render kotlin-gradle smoke project
+        run: |
+          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
+          galaxio template init gatling/kotlin-gradle \
+            --destination "$RUNNER_TEMP/kotlin-gradle" \
+            --values .github/template-smoke-values.yaml
+
+      - name: Check rendered kotlin-gradle substitutions
+        run: |
+          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
+          test -f "$RUNNER_TEMP/kotlin-gradle/build.gradle.kts"
+          test -f "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/Debug.kt"
+          grep -R "orders-api" "$RUNNER_TEMP/kotlin-gradle"
+          grep -R "org.example.performance" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin"
+          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/kotlin-gradle/build.gradle.kts"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/Stability.kt"
+          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/MaxPerformance.kt"
+
+      - name: Compile kotlin-gradle rendered project
+        run: |
+          cd "$RUNNER_TEMP/kotlin-gradle"
+          chmod +x gradlew
+          ./gradlew --no-daemon gatlingClasses

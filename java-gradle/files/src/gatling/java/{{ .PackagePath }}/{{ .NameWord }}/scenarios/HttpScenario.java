@@ -1,0 +1,17 @@
+package {{ .Package }}.{{ .NameWord }}.scenarios;
+
+import io.gatling.javaapi.core.ScenarioBuilder;
+import {{ .Package }}.{{ .NameWord }}.cases.HttpActions;
+
+import static io.gatling.javaapi.core.CoreDsl.scenario;
+
+public final class HttpScenario {
+
+    private HttpScenario() {
+    }
+
+    public static ScenarioBuilder create() {
+        return scenario("Http Scenario")
+                .exec(HttpActions.getMainPage);
+    }
+}

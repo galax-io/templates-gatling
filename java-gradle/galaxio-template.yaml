@@ -1,0 +1,77 @@
+apiVersion: galaxio.io/v1
+kind: Template
+name: java-gradle
+displayName: Gatling Java gradle
+description: Gatling Java project with Gradle
+engine: go-template
+tags:
+  - gatling
+  - java
+  - gradle
+inputs:
+  Name:
+    type: string
+    default: myservice
+  NameWord:
+    type: string
+    default: myservice
+  Package:
+    type: string
+    default: org.galaxio.performance
+  PackagePath:
+    type: string
+    default: org/galaxio/performance
+  JavaVersion:
+    type: string
+    default: "17"
+  GradleWrapperVersion:
+    type: string
+    default: 9.4.1
+  GatlingVersion:
+    type: string
+    default: 3.11.5
+  GatlingGradlePluginVersion:
+    type: string
+    default: 3.11.5.2
+  GatlingPicatinnyVersion:
+    type: string
+    default: 1.2.0
+  BaseUrl:
+    type: string
+    default: http://localhost
+  BaseAuthUrl:
+    type: string
+    default: http://localhost/auth
+  WsBaseUrl:
+    type: string
+    default: ws://localhost/ws
+  Intensity:
+    type: string
+    default: 60 rpm
+  StagesNumber:
+    type: string
+    default: "2"
+  RampDuration:
+    type: string
+    default: 1 second
+  StageDuration:
+    type: string
+    default: 1 second
+  TestDuration:
+    type: string
+    default: 5 seconds
+  Pacing:
+    type: string
+    default: 1 second
+  ScenarioName:
+    type: string
+    default: Synthetic business flow
+  StartupBannerEnabled:
+    type: string
+    default: "true"
+  DiagnosticsEnabled:
+    type: string
+    default: "false"
+files:
+  - from: files
+    to: .

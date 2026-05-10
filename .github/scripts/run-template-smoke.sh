@@ -12,6 +12,7 @@ config_file="${runner_temp}/galaxio-config.yaml"
 render_root="${runner_temp}/rendered/${template}"
 default_dir="${render_root}/default"
 override_dir="${render_root}/override"
+kafka_dir="${render_root}/kafka"
 compile_log="${render_root}/compile.log"
 start_time="$(date +%s)"
 
@@ -114,6 +115,11 @@ case "${template}" in
     ;;
 esac
 
+source_ext="${debug_file##*.}"
+kafka_actions_file="${source_root}/org/example/performance/ordersapi/cases/KafkaActions.${source_ext}"
+kafka_scenario_file="${source_root}/org/example/performance/ordersapi/scenarios/KafkaScenario.${source_ext}"
+plugin_source_dir="${workspace_root}/${template}/plugins/kafka"
+
 mkdir -p "${registry_root}" "${default_dir}" "${override_dir}"
 rm -f "${compile_log}"
 
@@ -163,6 +169,41 @@ set +e
 compile_status=$?
 set -e
 
+# -- plugin smoke (only when template ships plugin overlays) -----------
+kafka_compile_status=0
+if [[ -d "${plugin_source_dir}" ]]; then
+  mkdir -p "${kafka_dir}"
+
+  galaxio template init "gatling/${template}" \
+    --destination "${kafka_dir}" \
+    --values "${values_file}" \
+    --set "KafkaPluginEnabled=true"
+
+  # plugin files must appear when enabled
+  test -f "${kafka_dir}/${kafka_actions_file}"
+  test -f "${kafka_dir}/${kafka_scenario_file}"
+
+  # plugin files must be absent in default render (no leakage)
+  test ! -f "${default_dir}/${kafka_actions_file}"
+  test ! -f "${default_dir}/${kafka_scenario_file}"
+
+  # build file must reference kafka plugin dep
+  grep -R "gatling-kafka-plugin" "${kafka_dir}/${picatinny_file}" >/dev/null
+
+  if [[ -n "${wrapper_file}" ]]; then
+    chmod +x "${kafka_dir}/${wrapper_file}"
+  fi
+
+  set +e
+  (
+    cd "${kafka_dir}"
+    set -o pipefail
+    eval "${compile_cmd}" 2>&1 | tee -a "${compile_log}"
+  )
+  kafka_compile_status=$?
+  set -e
+fi
+
 duration="$(( $(date +%s) - start_time ))"
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
@@ -179,10 +220,17 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     else
       echo "- Result: failure"
     fi
+    if [[ -d "${plugin_source_dir}" ]]; then
+      if [[ "${kafka_compile_status}" -eq 0 ]]; then
+        echo "- Kafka plugin: success"
+      else
+        echo "- Kafka plugin: failure"
+      fi
+    fi
     echo
   } >> "${GITHUB_STEP_SUMMARY}"
 fi
 
-if [[ "${compile_status}" -ne 0 ]]; then
-  exit "${compile_status}"
+if [[ "${compile_status}" -ne 0 ]] || [[ "${kafka_compile_status}" -ne 0 ]]; then
+  exit 1
 fi

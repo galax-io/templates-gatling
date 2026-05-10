@@ -73,6 +73,54 @@ inputs:
   ScenarioName:
     type: string
     default: Synthetic business flow
+  KafkaPluginEnabled:
+    type: string
+    default: "false"
+  KafkaPluginVersion:
+    type: string
+    default: 1.0.0-RC2
+  KafkaTopic:
+    type: string
+    default: myTopic
+  KafkaUrl:
+    type: string
+    default: localhost:9092
+  JdbcPluginEnabled:
+    type: string
+    default: "false"
+  JdbcPluginVersion:
+    type: string
+    default: 0.14.2
+  DbUrl:
+    type: string
+    default: jdbc:postgresql://localhost:5432/postgres
+  DbUser:
+    type: string
+    default: postgres
+  DbPassword:
+    type: string
+    default: postgres
+  AmqpPluginEnabled:
+    type: string
+    default: "false"
+  AmqpPluginVersion:
+    type: string
+    default: 0.14.0
+  AmqpHost:
+    type: string
+    default: localhost
+  AmqpPort:
+    type: string
+    default: "5672"
+  AmqpLogin:
+    type: string
+    default: guest
+  AmqpPassword:
+    type: string
+    default: guest
+  AmqpQueue:
+    type: string
+    default: my_queue
   StartupBannerEnabled:
     type: string
     default: "true"
@@ -82,3 +130,12 @@ inputs:
 files:
   - from: files
     to: .
+  - from: plugins/kafka
+    to: .
+    if: '{{ .KafkaPluginEnabled }}'
+  - from: plugins/jdbc
+    to: .
+    if: '{{ .JdbcPluginEnabled }}'
+  - from: plugins/amqp
+    to: .
+    if: '{{ .AmqpPluginEnabled }}'

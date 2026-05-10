@@ -8,4 +8,13 @@ object Dependencies {
 
   lazy val gatlingPicatinny: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-picatinny" % "{{ .GatlingPicatinnyVersion }}")
   lazy val janino: Seq[ModuleID]           = Seq("org.codehaus.janino" % "janino" % "3.1.12")
+{{- if eq .KafkaPluginEnabled "true" }}
+  lazy val kafkaPlugin: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-kafka-plugin" % "{{ .KafkaPluginVersion }}")
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+  lazy val jdbcPlugin: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-jdbc-plugin" % "{{ .JdbcPluginVersion }}")
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+  lazy val amqpPlugin: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-amqp-plugin" % "{{ .AmqpPluginVersion }}")
+{{- end }}
 }

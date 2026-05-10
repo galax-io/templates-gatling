@@ -175,6 +175,12 @@ Versioning rule:
 CI reads the latest commit subject and enforces `fix` vs `feat` bump policy for
 pack and changed templates independently.
 
+Run the versioning checker self-test locally with:
+
+```bash
+bash .github/scripts/check-template-version-bump_test.sh
+```
+
 Release tags drive immutable template consumption. After merging release changes,
 create a repository tag such as `v0.1.0`; the release workflow creates GitHub
 Release notes. Registries keep pointing at the repository:

@@ -36,6 +36,9 @@ jobs:
           cd "$RUNNER_TEMP/galaxio-cli"
           go install ./cmd/galaxio
 
+      - name: Test template version bump checker
+        run: bash ./.github/scripts/check-template-version-bump_test.sh
+
       - name: Check template version bump
         if: github.event_name == 'pull_request'
         run: ./.github/scripts/check-template-version-bump.sh

@@ -7,7 +7,6 @@ Gatling Java project with Maven in Galaxio style.
 ```text
 src/test/java/{{ .PackagePath }}/{{ .NameWord }}/
   Performance.java
-  PerformanceSupport.java
   Debug.java
   Stability.java
   MaxPerformance.java

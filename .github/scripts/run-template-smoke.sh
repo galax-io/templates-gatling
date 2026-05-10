@@ -12,11 +12,14 @@ config_file="${runner_temp}/galaxio-config.yaml"
 render_root="${runner_temp}/rendered/${template}"
 default_dir="${render_root}/default"
 override_dir="${render_root}/override"
+compile_log="${render_root}/compile.log"
+start_time="$(date +%s)"
 
 expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' "${values_file}")"
 
 case "${template}" in
   scala-sbt)
+    build_tool="sbt"
     source_root="src/test/scala"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.scala"
     override_debug_file="${source_root}/org/example/performance/ordersapiset/Debug.scala"
@@ -31,6 +34,7 @@ case "${template}" in
     override_name_word="ordersapiset"
     ;;
   scala-gradle)
+    build_tool="gradle"
     source_root="src/gatling/scala"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.scala"
     override_debug_file="${source_root}/org/example/performance/ordersapigradle/Debug.scala"
@@ -45,6 +49,7 @@ case "${template}" in
     override_name_word="ordersapigradle"
     ;;
   java-maven)
+    build_tool="maven"
     source_root="src/test/java"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.java"
     override_debug_file="${source_root}/org/example/performance/ordersapijavamaven/Debug.java"
@@ -59,6 +64,7 @@ case "${template}" in
     override_name_word="ordersapijavamaven"
     ;;
   kotlin-maven)
+    build_tool="maven"
     source_root="src/test/kotlin"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.kt"
     override_debug_file="${source_root}/org/example/performance/ordersapikotlinmaven/Debug.kt"
@@ -73,6 +79,7 @@ case "${template}" in
     override_name_word="ordersapikotlinmaven"
     ;;
   java-gradle)
+    build_tool="gradle"
     source_root="src/gatling/java"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.java"
     override_debug_file="${source_root}/org/example/performance/ordersapijavagradle/Debug.java"
@@ -87,6 +94,7 @@ case "${template}" in
     override_name_word="ordersapijavagradle"
     ;;
   kotlin-gradle)
+    build_tool="gradle"
     source_root="src/gatling/kotlin"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.kt"
     override_debug_file="${source_root}/org/example/performance/ordersapikotlingradle/Debug.kt"
@@ -107,6 +115,7 @@ case "${template}" in
 esac
 
 mkdir -p "${registry_root}" "${default_dir}" "${override_dir}"
+rm -f "${compile_log}"
 
 cat > "${registry_root}/galaxio-registry.yaml" <<EOF
 apiVersion: galaxio.io/v1
@@ -145,7 +154,35 @@ if [[ -n "${wrapper_file}" ]]; then
   chmod +x "${default_dir}/${wrapper_file}"
 fi
 
+set +e
 (
   cd "${default_dir}"
-  eval "${compile_cmd}"
+  set -o pipefail
+  eval "${compile_cmd}" 2>&1 | tee "${compile_log}"
 )
+compile_status=$?
+set -e
+
+duration="$(( $(date +%s) - start_time ))"
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  {
+    echo "### ${template}"
+    echo
+    echo "- Build tool: \`${build_tool}\`"
+    echo "- Compile command: \`${compile_cmd}\`"
+    echo "- Default render: \`${default_dir}\`"
+    echo "- Override render: \`${override_dir}\`"
+    echo "- Compile log: \`${compile_log}\`"
+    echo "- Duration: \`${duration}s\`"
+    if [[ "${compile_status}" -eq 0 ]]; then
+      echo "- Result: success"
+    else
+      echo "- Result: failure"
+    fi
+    echo
+  } >> "${GITHUB_STEP_SUMMARY}"
+fi
+
+if [[ "${compile_status}" -ne 0 ]]; then
+  exit "${compile_status}"
+fi

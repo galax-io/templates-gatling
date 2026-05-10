@@ -6,35 +6,26 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  validate:
+  versioning:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24.x"
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      - name: Setup sbt
-        uses: sbt/setup-sbt@v1
-
-      - name: Install galaxio
-        run: |
-          git clone --depth 1 https://github.com/galax-io/galaxio-cli "$RUNNER_TEMP/galaxio-cli"
-          cd "$RUNNER_TEMP/galaxio-cli"
-          go install ./cmd/galaxio
 
       - name: Test template version bump checker
         run: bash ./.github/scripts/check-template-version-bump_test.sh
@@ -43,187 +34,135 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./.github/scripts/check-template-version-bump.sh
 
+  build-galaxio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone galaxio-cli
+        run: git clone --depth 1 https://github.com/galax-io/galaxio-cli "${RUNNER_TEMP}/galaxio-cli"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: true
+          cache-dependency-path: ${{ runner.temp }}/galaxio-cli/go.sum
+
+      - name: Build galaxio binary
+        run: |
+          mkdir -p "${RUNNER_TEMP}/galaxio-bin"
+          cd "${RUNNER_TEMP}/galaxio-cli"
+          go build -o "${RUNNER_TEMP}/galaxio-bin/galaxio" ./cmd/galaxio
+
+      - name: Upload galaxio binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: galaxio-linux-amd64
+          path: ${{ runner.temp }}/galaxio-bin/galaxio
+          if-no-files-found: error
+
+  pack-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - build-galaxio
+      - versioning
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download galaxio binary
+        uses: actions/download-artifact@v4
+        with:
+          name: galaxio-linux-amd64
+          path: ${{ runner.temp }}/galaxio-bin
+
+      - name: Add galaxio to PATH
+        run: |
+          chmod +x "${RUNNER_TEMP}/galaxio-bin/galaxio"
+          echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
+
       - name: Validate template pack
         run: galaxio template validate local:.
 
-      - name: Configure local registry
-        run: |
-          mkdir -p "$RUNNER_TEMP/registry"
-          cat > "$RUNNER_TEMP/registry/galaxio-registry.yaml" <<YAML
-          apiVersion: galaxio.io/v1
-          kind: TemplateRegistry
-          packs:
-            - name: gatling
-              source: local:${GITHUB_WORKSPACE}
-          YAML
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template configure --registry "local:$RUNNER_TEMP/registry"
-          galaxio template configure --show
+  template-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - build-galaxio
+      - pack-validate
+      - versioning
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - template: scala-sbt
+            cache: sbt
+            needs_sbt: true
+          - template: scala-gradle
+            cache: gradle
+            needs_sbt: false
+          - template: java-maven
+            cache: maven
+            needs_sbt: false
+          - template: kotlin-maven
+            cache: maven
+            needs_sbt: false
+          - template: java-gradle
+            cache: gradle
+            needs_sbt: false
+          - template: kotlin-gradle
+            cache: gradle
+            needs_sbt: false
+    name: smoke-${{ matrix.template }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Render scala-sbt smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/scala-sbt \
-            --destination "$RUNNER_TEMP/scala-sbt" \
-            --values .github/template-smoke-values.yaml
+      - name: Download galaxio binary
+        uses: actions/download-artifact@v4
+        with:
+          name: galaxio-linux-amd64
+          path: ${{ runner.temp }}/galaxio-bin
 
-      - name: Render scala-sbt with set overrides
+      - name: Add galaxio to PATH
         run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/scala-sbt \
-            --destination "$RUNNER_TEMP/scala-sbt-set" \
-            --values .github/template-smoke-values.yaml \
-            --set Name=orders-api-set \
-            --set NameWord=ordersapiset
-          grep -R "orders-api-set" "$RUNNER_TEMP/scala-sbt-set"
-          test -f "$RUNNER_TEMP/scala-sbt-set/src/test/scala/org/example/performance/ordersapiset/Debug.scala"
+          chmod +x "${RUNNER_TEMP}/galaxio-bin/galaxio"
+          echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
 
-      - name: Check rendered substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/scala-sbt/build.sbt"
-          test -f "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Debug.scala"
-          grep -R "orders-api" "$RUNNER_TEMP/scala-sbt"
-          grep -R "org.example.performance" "$RUNNER_TEMP/scala-sbt/src/test/scala"
-          grep -R "gatling-picatinny\" % \"${expected_picatinny_version}\"" "$RUNNER_TEMP/scala-sbt/project/Dependencies.scala"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/Stability.scala"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-sbt/src/test/scala/org/example/performance/ordersapi/MaxPerformance.scala"
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: ${{ matrix.cache }}
 
-      - name: Compile scala-sbt rendered project
-        run: |
-          cd "$RUNNER_TEMP/scala-sbt"
-          sbt -batch Gatling/compile
+      - name: Cache coursier and ivy
+        if: matrix.needs_sbt
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-sbt-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/**', matrix.template)) }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-
 
-      - name: Render scala-gradle smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/scala-gradle \
-            --destination "$RUNNER_TEMP/scala-gradle" \
-            --values .github/template-smoke-values.yaml
+      - name: Setup sbt
+        if: matrix.needs_sbt
+        uses: sbt/setup-sbt@v1
 
-      - name: Render scala-gradle with set overrides
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/scala-gradle \
-            --destination "$RUNNER_TEMP/scala-gradle-set" \
-            --values .github/template-smoke-values.yaml \
-            --set Name=orders-api-gradle \
-            --set NameWord=ordersapigradle
-          grep -R "orders-api-gradle" "$RUNNER_TEMP/scala-gradle-set"
-          test -f "$RUNNER_TEMP/scala-gradle-set/src/gatling/scala/org/example/performance/ordersapigradle/Debug.scala"
+      - name: Run template smoke test
+        run: bash ./.github/scripts/run-template-smoke.sh "${{ matrix.template }}"
 
-      - name: Check scala-gradle rendered substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/scala-gradle/build.gradle"
-          test -f "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/Debug.scala"
-          test -f "$RUNNER_TEMP/scala-gradle/gradlew"
-          grep -R "orders-api" "$RUNNER_TEMP/scala-gradle"
-          grep -R "org.example.performance" "$RUNNER_TEMP/scala-gradle/src/gatling/scala"
-          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/scala-gradle/build.gradle"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/Stability.scala"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/scala-gradle/src/gatling/scala/org/example/performance/ordersapi/MaxPerformance.scala"
-
-      - name: Compile scala-gradle rendered project
-        run: |
-          cd "$RUNNER_TEMP/scala-gradle"
-          chmod +x gradlew
-          ./gradlew --no-daemon gatlingClasses
-
-      - name: Render java-maven smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/java-maven \
-            --destination "$RUNNER_TEMP/java-maven" \
-            --values .github/template-smoke-values.yaml
-
-      - name: Check rendered java-maven substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/java-maven/pom.xml"
-          test -f "$RUNNER_TEMP/java-maven/src/test/java/org/example/performance/ordersapi/Debug.java"
-          grep -R "orders-api" "$RUNNER_TEMP/java-maven"
-          grep -R "org.example.performance" "$RUNNER_TEMP/java-maven/src/test/java"
-          grep -R "<artifactId>gatling-picatinny_2.13</artifactId>" "$RUNNER_TEMP/java-maven/pom.xml"
-          grep -R "<picatinny.version>${expected_picatinny_version}</picatinny.version>" "$RUNNER_TEMP/java-maven/pom.xml"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/java-maven/src/test/java/org/example/performance/ordersapi/Stability.java"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/java-maven/src/test/java/org/example/performance/ordersapi/MaxPerformance.java"
-
-      - name: Compile java-maven rendered project
-        run: |
-          cd "$RUNNER_TEMP/java-maven"
-          chmod +x mvnw
-          ./mvnw -q test-compile
-
-      - name: Render kotlin-maven smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/kotlin-maven \
-            --destination "$RUNNER_TEMP/kotlin-maven" \
-            --values .github/template-smoke-values.yaml
-
-      - name: Check rendered kotlin-maven substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/kotlin-maven/pom.xml"
-          test -f "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/Debug.kt"
-          grep -R "orders-api" "$RUNNER_TEMP/kotlin-maven"
-          grep -R "org.example.performance" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin"
-          grep -R "<artifactId>gatling-picatinny_2.13</artifactId>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
-          grep -R "<picatinny.version>${expected_picatinny_version}</picatinny.version>" "$RUNNER_TEMP/kotlin-maven/pom.xml"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/Stability.kt"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-maven/src/test/kotlin/org/example/performance/ordersapi/MaxPerformance.kt"
-
-      - name: Compile kotlin-maven rendered project
-        run: |
-          cd "$RUNNER_TEMP/kotlin-maven"
-          chmod +x mvnw
-          ./mvnw -q test-compile
-
-      - name: Render java-gradle smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/java-gradle \
-            --destination "$RUNNER_TEMP/java-gradle" \
-            --values .github/template-smoke-values.yaml
-
-      - name: Check rendered java-gradle substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/java-gradle/build.gradle"
-          test -f "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/Debug.java"
-          grep -R "orders-api" "$RUNNER_TEMP/java-gradle"
-          grep -R "org.example.performance" "$RUNNER_TEMP/java-gradle/src/gatling/java"
-          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/java-gradle/build.gradle"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/Stability.java"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/java-gradle/src/gatling/java/org/example/performance/ordersapi/MaxPerformance.java"
-
-      - name: Compile java-gradle rendered project
-        run: |
-          cd "$RUNNER_TEMP/java-gradle"
-          chmod +x gradlew
-          ./gradlew --no-daemon gatlingClasses
-
-      - name: Render kotlin-gradle smoke project
-        run: |
-          export GALAXIO_CONFIG="$RUNNER_TEMP/galaxio-config.yaml"
-          galaxio template init gatling/kotlin-gradle \
-            --destination "$RUNNER_TEMP/kotlin-gradle" \
-            --values .github/template-smoke-values.yaml
-
-      - name: Check rendered kotlin-gradle substitutions
-        run: |
-          expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' .github/template-smoke-values.yaml)"
-          test -f "$RUNNER_TEMP/kotlin-gradle/build.gradle.kts"
-          test -f "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/Debug.kt"
-          grep -R "orders-api" "$RUNNER_TEMP/kotlin-gradle"
-          grep -R "org.example.performance" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin"
-          grep -R "gatling-picatinny_2.13:${expected_picatinny_version}" "$RUNNER_TEMP/kotlin-gradle/build.gradle.kts"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/Stability.kt"
-          grep -R "Utility.banner(" "$RUNNER_TEMP/kotlin-gradle/src/gatling/kotlin/org/example/performance/ordersapi/MaxPerformance.kt"
-
-      - name: Compile kotlin-gradle rendered project
-        run: |
-          cd "$RUNNER_TEMP/kotlin-gradle"
-          chmod +x gradlew
-          ./gradlew --no-daemon gatlingClasses
+      - name: Upload rendered project on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-${{ matrix.template }}
+          path: ${{ runner.temp }}/rendered/${{ matrix.template }}
+          if-no-files-found: ignore

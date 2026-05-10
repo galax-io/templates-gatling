@@ -89,7 +89,7 @@ git show "${base}:galaxio-pack.yaml" > "${old_manifest}"
 old_pack_version="$(pack_version_for "${old_manifest}")"
 new_pack_version="$(pack_version_for galaxio-pack.yaml)"
 
-templates=(scala-sbt scala-gradle java-maven kotlin-maven java-gradle)
+templates=(scala-sbt scala-gradle java-maven kotlin-maven java-gradle kotlin-gradle)
 changed_any=0
 
 for template in "${templates[@]}"; do

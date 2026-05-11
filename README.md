@@ -13,31 +13,31 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.6.0
+version: 0.12.0
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.1.1
+    version: 0.2.0
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
-    version: 0.1.0
+    version: 0.2.0
     path: java-maven
     description: Gatling Java project with Maven
   - name: kotlin-maven
-    version: 0.1.0
+    version: 0.2.0
     path: kotlin-maven
     description: Gatling Kotlin project with Maven
   - name: scala-gradle
-    version: 0.1.0
+    version: 0.2.0
     path: scala-gradle
     description: Gatling Scala project with Gradle
   - name: java-gradle
-    version: 0.1.0
+    version: 0.2.0
     path: java-gradle
     description: Gatling Java project with Gradle
   - name: kotlin-gradle
-    version: 0.1.0
+    version: 0.2.0
     path: kotlin-gradle
     description: Gatling Kotlin project with Gradle
 ```
@@ -52,6 +52,48 @@ templates:
 | `scala-gradle` | Gatling Scala project with Gradle |
 | `java-gradle` | Gatling Java project with Gradle |
 | `kotlin-gradle` | Gatling Kotlin project with Gradle |
+
+## Optional Plugin Modules
+
+Each template supports optional Kafka, JDBC, and AMQP plugin modules via
+conditional overlay directories. Plugin files live under `plugins/<name>/`
+and are rendered only when the corresponding input is enabled.
+
+| Plugin | Enable input | Version input | Default |
+| --- | --- | --- | --- |
+| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.0.0-RC2` |
+| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `0.14.2` |
+| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `0.14.0` |
+
+Enable a plugin at render time:
+
+```bash
+galaxio template init gatling/scala-sbt \
+  --set KafkaPluginEnabled=true
+```
+
+When enabled, the template:
+- adds plugin dependency to the build file
+- adds `kafkaUrl` / `dbUrl` / `amqpHost` etc. to `simulation.conf`
+- overlays `cases/KafkaActions` and `scenarios/KafkaScenario` source files
+
+### Directory structure
+
+```text
+scala-sbt/
+  galaxio-template.yaml
+  files/                          # always rendered
+    build.sbt
+    src/test/scala/...
+  plugins/
+    kafka/                        # rendered when KafkaPluginEnabled=true
+      src/test/scala/.../cases/KafkaActions.scala
+      src/test/scala/.../scenarios/KafkaScenario.scala
+    jdbc/                         # rendered when JdbcPluginEnabled=true
+      ...
+    amqp/                         # rendered when AmqpPluginEnabled=true
+      ...
+```
 
 ## Scala sbt Inputs
 
@@ -128,11 +170,26 @@ scala-sbt/
   files/
     build.sbt
     src/test/scala/{{ .PackagePath }}/{{ .NameWord }}/Debug.scala
+  plugins/
+    kafka/
+    jdbc/
+    amqp/
 ```
 
 The pack manifest registers templates in [`galaxio-pack.yaml`](galaxio-pack.yaml).
 Renderable templates must define a `path` and contain a `galaxio-template.yaml`.
 Placeholder-only templates omit `path` and appear as coming soon in the CLI.
+
+Plugin overlay directories are declared in the template manifest:
+
+```yaml
+files:
+  - from: files
+    to: .
+  - from: plugins/kafka
+    to: .
+    if: '{{ .KafkaPluginEnabled }}'
+```
 
 For local development, create a temporary registry that points at this checkout:
 
@@ -173,7 +230,8 @@ Versioning rule:
 - new renderable templates start from `0.1.0`
 
 CI reads the latest commit subject and enforces `fix` vs `feat` bump policy for
-pack and changed templates independently.
+pack and changed templates independently. CI also verifies that the new pack
+version is not already tagged — preventing merges that reuse an existing version.
 
 Run the versioning checker self-test locally with:
 
@@ -181,9 +239,15 @@ Run the versioning checker self-test locally with:
 bash .github/scripts/check-template-version-bump_test.sh
 ```
 
-Release tags drive immutable template consumption. After merging release changes,
-create a repository tag such as `v0.1.0`; the release workflow creates GitHub
-Release notes. Registries keep pointing at the repository:
+## Release
+
+Releases are tag-driven. After merging changes to `main`:
+
+1. Push a tag matching the pack version: `git tag v0.12.0 && git push origin v0.12.0`
+2. The release workflow triggers automatically and creates a GitHub Release with auto-generated notes
+3. The workflow validates that the tag matches the `version` in `galaxio-pack.yaml`
+
+Registries point at the repository:
 
 ```yaml
 source: github:galax-io/templates-gatling
@@ -198,16 +262,13 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 `Utility.banner(injector)` and the current startup diagnostics/config flow used
 by the template.
 
-Future extensions that fit the current shape:
-
-- optional protocol modules: Kafka, JDBC, AMQP, JMS
-- source-root mode: `src/test/scala` or `src/it/scala`
-- workload profile presets: smoke, stability, max performance, closed pacing
-- optional NFR assertions from YAML
-
 ## Validation
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
-renders `scala-sbt` through `galaxio template init` with the default Picatinny
-version, checks placeholder substitution, and compiles the rendered Scala+sbt
-project with `sbt -batch Gatling/compile`.
+renders each template through `galaxio template init` with default values,
+checks placeholder substitution, and compiles the rendered project.
+
+When a template has `plugins/kafka/`, CI also renders with `KafkaPluginEnabled=true`,
+verifies that plugin source files are present (and absent in the default render),
+checks for the plugin dependency in the build file, and compiles the kafka-enabled
+project.

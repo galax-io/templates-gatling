@@ -9,7 +9,7 @@ templates:
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
-    version: 0.1.0
+    version: 0.2.0
     path: java-maven
     description: Gatling Java project with Maven
   - name: kotlin-maven

@@ -169,3 +169,11 @@ done
 if [[ "${changed_any}" -eq 0 ]]; then
   exit 0
 fi
+
+# Verify the new pack version is not already tagged — prevents merging without
+# a corresponding version bump when a tag already exists for that version.
+if git rev-parse "v${new_pack_version}" >/dev/null 2>&1; then
+  echo "Pack version ${new_pack_version} is already tagged as v${new_pack_version}." >&2
+  echo "Bump the pack version in galaxio-pack.yaml before merging." >&2
+  exit 1
+fi

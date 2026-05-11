@@ -183,11 +183,52 @@ test_fix_change_requires_pack_bump() {
     run_check "$repo_dir" env SKIP_FETCH=1 BASE=main
 }
 
+test_pack_version_already_tagged_fails() {
+  local repo_dir
+  repo_dir="$(mktemp -d)"
+  trap 'rm -rf "$repo_dir"' RETURN
+  create_repo "$repo_dir"
+
+  # Tag v0.6.1 on main to simulate a previous release at that version
+  git -C "$repo_dir" tag v0.6.1 main
+
+  # PR: bump pack to 0.6.1 (already tagged) and template — should fail
+  printf 'updated\n' > "${repo_dir}/scala-sbt/files/base.txt"
+  perl -0pi -e 's/version: 0\.6\.0/version: 0.6.1/; s/version: 0\.1\.1/version: 0.1.2/' "${repo_dir}/galaxio-pack.yaml"
+  git -C "$repo_dir" add .
+  git -C "$repo_dir" commit -m "fix(scala-sbt): adjust template defaults" >/dev/null
+
+  assert_failure_contains \
+    "pack version already tagged fails" \
+    "Pack version 0.6.1 is already tagged as v0.6.1" \
+    run_check "$repo_dir" env SKIP_FETCH=1 BASE=main
+}
+
+test_pack_version_not_yet_tagged_passes() {
+  local repo_dir
+  repo_dir="$(mktemp -d)"
+  trap 'rm -rf "$repo_dir"' RETURN
+  create_repo "$repo_dir"
+
+  # v0.6.0 NOT tagged — pack bump to 0.6.1 should be fine
+  printf 'updated\n' > "${repo_dir}/scala-sbt/files/base.txt"
+  perl -0pi -e 's/version: 0\.6\.0/version: 0.6.1/; s/version: 0\.1\.1/version: 0.1.2/' "${repo_dir}/galaxio-pack.yaml"
+
+  git -C "$repo_dir" add .
+  git -C "$repo_dir" commit -m "fix(scala-sbt): adjust template defaults" >/dev/null
+
+  assert_success \
+    "pack version not yet tagged passes" \
+    run_check "$repo_dir" env SKIP_FETCH=1 BASE=main
+}
+
 test_fix_change_requires_pack_and_template_bump
 test_missing_template_bump_fails
 test_non_template_change_does_not_require_bump
 test_new_renderable_template_must_start_at_010
 test_fix_change_requires_pack_bump
+test_pack_version_already_tagged_fails
+test_pack_version_not_yet_tagged_passes
 
 if [[ "$failures" -ne 0 ]]; then
   printf '\n%d test(s) failed\n' "$failures"

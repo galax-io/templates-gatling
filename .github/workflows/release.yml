@@ -1,12 +1,9 @@
 name: release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release, for example 0.7.0"
-        required: true
-        type: string
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 concurrency:
   group: release-publish
@@ -20,68 +17,25 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     steps:
-      - name: Validate version format
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Version must be in semver format X.Y.Z, got: ${VERSION}" >&2
-            exit 1
-          fi
-
-      - name: Checkout main
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
-      - name: Check tag does not already exist
-        env:
-          VERSION: ${{ inputs.version }}
+      - name: Validate tag matches pack version
         run: |
-          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-            echo "Tag v${VERSION} already exists." >&2
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          pack_version="$(awk '$1 == "version:" { print $2; exit }' galaxio-pack.yaml)"
+          if [[ "${version}" != "${pack_version}" ]]; then
+            echo "Tag ${tag} does not match galaxio-pack.yaml version ${pack_version}" >&2
             exit 1
           fi
-
-      - name: Bump version in galaxio-pack.yaml and README
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          awk -v v="${VERSION}" '
-            /^version:/ { print "version: " v; next }
-            { print }
-          ' galaxio-pack.yaml > galaxio-pack.yaml.tmp
-          mv galaxio-pack.yaml.tmp galaxio-pack.yaml
-
-          sed -i "s/^version: [0-9]\+\.[0-9]\+\.[0-9]\+/version: ${VERSION}/" README.md
-          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" README.md
-
-      - name: Commit version bump
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add galaxio-pack.yaml README.md
-          git diff --cached --exit-code && {
-            echo "No changes to commit — is the version already ${VERSION}?" >&2
-            exit 1
-          }
-          git commit -m "chore(release): bump version to v${VERSION}"
-
-      - name: Create and push tag
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          git tag "v${VERSION}"
-          git push origin main "v${VERSION}"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
         run: |
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
             --generate-notes

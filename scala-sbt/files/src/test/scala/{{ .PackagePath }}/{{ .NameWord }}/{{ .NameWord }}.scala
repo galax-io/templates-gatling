@@ -2,18 +2,60 @@ package {{ .Package }}
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
+{{- if eq .KafkaPluginEnabled "true" }}
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.galaxio.gatling.kafka.Predef.kafka
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+import org.galaxio.gatling.jdbc.Predef._
+import scala.concurrent.duration.DurationInt
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+import org.galaxio.gatling.amqp.Predef._
+{{- end }}
 import org.galaxio.gatling.config.SimulationConfig._
 package object {{ .NameWord }} {
 
-  // common http protocol params (eg headers, checks)
   val httpProtocol = http
-    .baseUrl(
-      baseUrl,
-    )                                                                                // Here is the root for all relative URLs, located in simulation.conf file, or -DbaseUrl="" passed to test param
-    .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") // Here are the common headers
-    .acceptEncodingHeader("gzip, deflate")
-    .acceptLanguageHeader("en-US,en;q=0.5")
-    .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:16.0) Gecko/20100101 Firefox/16.0")
+    .baseUrl(baseUrl)
+    .acceptHeader("application/json")
+    .contentTypeHeader("application/json")
     .disableFollowRedirect
+{{- if eq .KafkaPluginEnabled "true" }}
+
+  val kafkaProtocol = kafka
+    .properties(
+      Map(
+        ProducerConfig.ACKS_CONFIG                   -> "1",
+        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG      -> getStringParam("kafkaUrl"),
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG   -> "org.apache.kafka.common.serialization.StringSerializer",
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG -> "org.apache.kafka.common.serialization.StringSerializer",
+      ),
+    )
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+
+  val jdbcProtocol = DB
+    .url(getStringParam("dbUrl"))
+    .username(getStringParam("dbUser"))
+    .password(getStringParam("dbPassword"))
+    .connectionTimeout(2.minutes)
+    .protocolBuilder
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+
+  val amqpProtocol = amqp
+    .connectionFactory(
+      rabbitmq
+        .host(getStringParam("amqpHost"))
+        .port(getIntParam("amqpPort"))
+        .username(getStringParam("amqpLogin"))
+        .password(getStringParam("amqpPassword"))
+        .vhost("/"),
+    )
+    .replyTimeout(60000)
+    .consumerThreadsCount(8)
+    .usePersistentDeliveryMode
+{{- end }}
 
 }

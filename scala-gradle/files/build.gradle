@@ -31,10 +31,22 @@ tasks.withType(JavaCompile).configureEach {
 repositories {
   mavenLocal()
   mavenCentral()
+{{- if eq .KafkaPluginEnabled "true" }}
+  maven { url = uri('https://packages.confluent.io/maven/') }
+{{- end }}
 }
 
 dependencies {
   gatling("org.galaxio:gatling-picatinny_2.13:{{ .GatlingPicatinnyVersion }}")
+{{- if eq .KafkaPluginEnabled "true" }}
+  gatling("org.galaxio:gatling-kafka-plugin_2.13:{{ .KafkaPluginVersion }}")
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+  gatling("org.galaxio:gatling-jdbc-plugin_2.13:{{ .JdbcPluginVersion }}")
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+  gatling("org.galaxio:gatling-amqp-plugin_2.13:{{ .AmqpPluginVersion }}")
+{{- end }}
   gatling("io.gatling.highcharts:gatling-charts-highcharts:{{ .GatlingVersion }}")
   gatling("io.gatling:gatling-test-framework:{{ .GatlingVersion }}")
   gatling("org.codehaus.janino:janino:3.1.12")

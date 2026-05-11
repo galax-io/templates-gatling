@@ -12,8 +12,20 @@ lazy val root = (project in file("."))
       ),
     ),
     name := "{{ .Name }}",
+{{- if eq .KafkaPluginEnabled "true" }}
+    resolvers += "Confluent" at "https://packages.confluent.io/maven/",
+{{- end }}
     libraryDependencies ++= gatling,
     libraryDependencies ++= gatlingPicatinny,
+{{- if eq .KafkaPluginEnabled "true" }}
+    libraryDependencies ++= kafkaPlugin,
+{{- end }}
+{{- if eq .JdbcPluginEnabled "true" }}
+    libraryDependencies ++= jdbcPlugin,
+{{- end }}
+{{- if eq .AmqpPluginEnabled "true" }}
+    libraryDependencies ++= amqpPlugin,
+{{- end }}
     libraryDependencies ++= janino,
       scalacOptions ++= Seq (
         "-encoding",

@@ -12,7 +12,7 @@ inputs:
   Name:
     type: string
     default: myservice
-    description: Project name used by sbt and README.
+    description: Project name used by Gradle and README.
   NameWord:
     type: string
     default: myservice

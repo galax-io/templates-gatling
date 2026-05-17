@@ -63,7 +63,7 @@ and are rendered only when the corresponding input is enabled.
 | --- | --- | --- | --- |
 | Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.0.0-RC2` |
 | JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `0.14.2` |
-| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `0.14.0` |
+| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `0.15.0` |
 
 Enable a plugin at render time:
 
@@ -111,7 +111,7 @@ Useful inputs:
 | `PackagePath` | `org/galaxio/performance` |
 | `ScalaVersion` | `2.13.18` |
 | `GatlingVersion` | `3.11.5` |
-| `GatlingPicatinnyVersion` | `1.2.0` |
+| `GatlingPicatinnyVersion` | `1.10.3` |
 
 ## Placeholder Syntax
 
@@ -258,7 +258,7 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
-`scala-sbt` template targets Picatinny `1.2.0` by default. That release includes
+`scala-sbt` template targets Picatinny `1.10.3` by default. That release includes
 `Utility.banner(injector)` and the current startup diagnostics/config flow used
 by the template.
 

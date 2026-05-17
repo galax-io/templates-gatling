@@ -39,11 +39,11 @@ inputs:
     description: Gatling framework version.
   GatlingMavenPluginVersion:
     type: string
-    default: 4.10.2
+    default: 4.21.5
     description: Gatling Maven plugin version.
   GatlingPicatinnyVersion:
     type: string
-    default: 1.2.0
+    default: 1.10.3
     description: Galaxio Gatling Picatinny library version.
   BaseUrl:
     type: string
@@ -107,7 +107,7 @@ inputs:
     default: "false"
   AmqpPluginVersion:
     type: string
-    default: 0.14.0
+    default: 0.15.0
   AmqpHost:
     type: string
     default: localhost

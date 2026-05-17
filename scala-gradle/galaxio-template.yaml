@@ -39,10 +39,10 @@ inputs:
     default: 3.11.5
   GatlingGradlePluginVersion:
     type: string
-    default: 3.11.5.2
+    default: 3.15.0.2
   GatlingPicatinnyVersion:
     type: string
-    default: 1.2.0
+    default: 1.10.3
   BaseUrl:
     type: string
     default: http://localhost
@@ -105,7 +105,7 @@ inputs:
     default: "false"
   AmqpPluginVersion:
     type: string
-    default: 0.14.0
+    default: 0.15.0
   AmqpHost:
     type: string
     default: localhost

@@ -26,7 +26,7 @@ class Stability : Simulation() {
                 .during(SimulationConfig.stageDuration())
         )
 
-        Utility.banner(injectionProfile)
+        Utility.banner(*injectionProfile)
 
         setUp(
             HttpScenario.create()

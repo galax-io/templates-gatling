@@ -24,6 +24,7 @@ package object {{ .NameWord }} {
 {{- if eq .KafkaPluginEnabled "true" }}
 
   val kafkaProtocol = kafka
+    .topic(getStringParam("kafkaTopic"))
     .properties(
       Map(
         ProducerConfig.ACKS_CONFIG                   -> "1",

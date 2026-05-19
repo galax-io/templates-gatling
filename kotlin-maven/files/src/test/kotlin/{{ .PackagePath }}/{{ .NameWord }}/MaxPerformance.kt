@@ -26,7 +26,7 @@ class MaxPerformance : Simulation() {
                 .startingFrom(0.0)
         )
 
-        Utility.banner(injectionProfile)
+        Utility.banner(*injectionProfile)
 
         setUp(
             HttpScenario.create()

@@ -33,6 +33,7 @@ public final class Performance {
 
     public static ProtocolBuilder kafkaProtocol() {
         return KafkaDsl.kafka()
+                .topic(getStringParam("kafkaTopic"))
                 .properties(Map.of(
                         ProducerConfig.ACKS_CONFIG, "1",
                         ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getStringParam("kafkaUrl"),

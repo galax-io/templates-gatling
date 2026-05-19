@@ -40,6 +40,8 @@ dependencies {
   gatling("org.galaxio:gatling-picatinny_2.13:{{ .GatlingPicatinnyVersion }}")
 {{- if eq .KafkaPluginEnabled "true" }}
   gatling("org.galaxio:gatling-kafka-plugin_2.13:{{ .KafkaPluginVersion }}")
+  gatling("org.apache.kafka:kafka-streams:{{ .KafkaStreamsVersion }}")
+  gatling("com.sksamuel.avro4s:avro4s-core_2.13:4.1.2")
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
   gatling("org.galaxio:gatling-jdbc-plugin_2.13:{{ .JdbcPluginVersion }}")

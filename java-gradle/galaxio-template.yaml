@@ -31,19 +31,19 @@ inputs:
     description: Java compiler release version.
   GradleWrapperVersion:
     type: string
-    default: 9.4.1
+    default: 8.10.2
     description: Gradle distribution version for the Gradle Wrapper.
   GatlingVersion:
     type: string
-    default: 3.11.5
+    default: 3.12.0
     description: Gatling framework version.
   GatlingGradlePluginVersion:
     type: string
-    default: 3.15.0.2
+    default: 3.12.0
     description: Gatling Gradle plugin version.
   GatlingPicatinnyVersion:
     type: string
-    default: 1.10.3
+    default: 1.10.4
     description: Galaxio Gatling Picatinny library version.
   BaseUrl:
     type: string
@@ -80,7 +80,10 @@ inputs:
     default: "false"
   KafkaPluginVersion:
     type: string
-    default: 1.0.0-RC2
+    default: 0.20.3
+  KafkaStreamsVersion:
+    type: string
+    default: 7.9.5-ce
   KafkaTopic:
     type: string
     default: myTopic
@@ -92,7 +95,7 @@ inputs:
     default: "false"
   JdbcPluginVersion:
     type: string
-    default: 0.14.2
+    default: 0.17.2
   DbUrl:
     type: string
     default: jdbc:postgresql://localhost:5432/postgres
@@ -107,7 +110,7 @@ inputs:
     default: "false"
   AmqpPluginVersion:
     type: string
-    default: 0.15.0
+    default: 1.0.4
   AmqpHost:
     type: string
     default: localhost

@@ -29,6 +29,12 @@
             <version>{{ .KafkaPluginVersion }}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+            <version>{{ .KafkaStreamsVersion }}</version>
+            <scope>test</scope>
+        </dependency>
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
         <dependency>

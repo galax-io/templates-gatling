@@ -7,6 +7,6 @@ import io.gatling.javaapi.http.HttpDsl.status
 
 object HttpActions {
     val getMainPage: ChainBuilder = exec(
-        http("GET /").get("/").check(status().is(200))
+        http("GET /").get("/").check(status().`is`(200))
     )
 }

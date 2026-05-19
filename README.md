@@ -61,9 +61,9 @@ and are rendered only when the corresponding input is enabled.
 
 | Plugin | Enable input | Version input | Default |
 | --- | --- | --- | --- |
-| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.0.0-RC2` |
-| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `0.14.2` |
-| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `0.15.0` |
+| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `0.20.3` |
+| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `0.17.2` |
+| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `1.0.4` |
 
 Enable a plugin at render time:
 
@@ -110,8 +110,8 @@ Useful inputs:
 | `Package` | `org.galaxio.performance` |
 | `PackagePath` | `org/galaxio/performance` |
 | `ScalaVersion` | `2.13.18` |
-| `GatlingVersion` | `3.11.5` |
-| `GatlingPicatinnyVersion` | `1.10.3` |
+| `GatlingVersion` | `3.12.0` |
+| `GatlingPicatinnyVersion` | `1.10.4` |
 
 ## Placeholder Syntax
 

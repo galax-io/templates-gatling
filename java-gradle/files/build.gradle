@@ -33,6 +33,7 @@ dependencies {
   gatlingImplementation "org.galaxio:gatling-picatinny_2.13:{{ .GatlingPicatinnyVersion }}"
 {{- if eq .KafkaPluginEnabled "true" }}
   gatlingImplementation "org.galaxio:gatling-kafka-plugin_2.13:{{ .KafkaPluginVersion }}"
+  gatlingImplementation "org.apache.kafka:kafka-streams:{{ .KafkaStreamsVersion }}"
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
   gatlingImplementation "org.galaxio:gatling-jdbc-plugin_2.13:{{ .JdbcPluginVersion }}"

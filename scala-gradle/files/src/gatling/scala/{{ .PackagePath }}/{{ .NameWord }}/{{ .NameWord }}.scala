@@ -2,6 +2,7 @@ package {{ .Package }}
 
 import io.gatling.core.Predef._
 import io.gatling.http.Predef._
+import scala.annotation.nowarn
 {{- if eq .KafkaPluginEnabled "true" }}
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.galaxio.gatling.kafka.Predef.kafka
@@ -23,6 +24,7 @@ package object {{ .NameWord }} {
     .disableFollowRedirect
 {{- if eq .KafkaPluginEnabled "true" }}
 
+  @nowarn("cat=deprecation")
   val kafkaProtocol = kafka
     .topic(getStringParam("kafkaTopic"))
     .properties(

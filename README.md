@@ -13,7 +13,7 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.14.0
+version: 0.14.1
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
@@ -243,7 +243,7 @@ bash .github/scripts/check-template-version-bump_test.sh
 
 Releases are tag-driven. After merging changes to `main`:
 
-1. Push a tag matching the pack version: `git tag v0.14.0 && git push origin v0.14.0`
+1. Push a tag matching the pack version: `git tag v0.14.1 && git push origin v0.14.1`
 2. The release workflow triggers automatically and creates a GitHub Release with auto-generated notes
 3. The workflow validates that the tag matches the `version` in `galaxio-pack.yaml`
 
@@ -258,7 +258,7 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
-`scala-sbt` template targets Picatinny `1.10.3` by default. That release includes
+`scala-sbt` template targets Picatinny `1.12.0` by default. That release includes
 `Utility.banner(injector)` and the current startup diagnostics/config flow used
 by the template.
 

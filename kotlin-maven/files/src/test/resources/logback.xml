@@ -36,7 +36,7 @@
         </then>
     </if>
 
-    <logger name="io.gatling.http.engine.response.DefaultStatsProcessor" level="DEBUG"/>
+    <logger name="io.gatling.http.engine.response.DefaultStatsProcessor" level="WARN"/>
 
     <root level="${ROOT_LOGGING_LEVEL:-ERROR}">
         <if condition='property("CONSOLE_LOGGING").contains("ON")'>

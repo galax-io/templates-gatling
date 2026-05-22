@@ -5,7 +5,7 @@ version: 0.14.6
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.2.6
+    version: 0.2.7
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven

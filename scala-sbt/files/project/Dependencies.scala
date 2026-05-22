@@ -16,7 +16,10 @@ object Dependencies {
   )
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
-  lazy val jdbcPlugin: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-jdbc-plugin" % "{{ .JdbcPluginVersion }}")
+  lazy val jdbcPlugin: Seq[ModuleID] = Seq(
+    "org.galaxio" %% "gatling-jdbc-plugin" % "{{ .JdbcPluginVersion }}",
+    "org.postgresql" % "postgresql" % "42.7.5",
+  )
 {{- end }}
 {{- if eq .AmqpPluginEnabled "true" }}
   lazy val amqpPlugin: Seq[ModuleID] = Seq("org.galaxio" %% "gatling-amqp-plugin" % "{{ .AmqpPluginVersion }}")

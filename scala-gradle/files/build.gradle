@@ -45,7 +45,7 @@ dependencies {
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
   gatling("org.galaxio:gatling-jdbc-plugin_2.13:{{ .JdbcPluginVersion }}")
-  gatling("org.postgresql:postgresql:42.7.5")
+  gatling("org.postgresql:postgresql:{{ .PostgresDriverVersion }}")
 {{- end }}
 {{- if eq .AmqpPluginEnabled "true" }}
   gatling("org.galaxio:gatling-amqp-plugin_2.13:{{ .AmqpPluginVersion }}")

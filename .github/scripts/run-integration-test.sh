@@ -182,14 +182,12 @@ case "${plugin}" in
     ;;
   kafka)
     echo "Verifying Kafka: checking messages were produced to 'integration_test_topic'..."
-    describe_out=$(docker compose -f "${compose_file}" exec -T redpanda \
-      rpk topic describe -s integration_test_topic 2>&1 || true)
-    echo "rpk topic describe -s output:" >&2
-    echo "${describe_out}" >&2
-    hwm=$(echo "${describe_out}" \
-      | awk 'NR==1{for(i=1;i<=NF;i++) if($i=="HIGH-WATERMARK") col=i}
-             NR>1 && col && /^[0-9]/{print $col+0; exit}')
-    echo "Extracted HWM: '${hwm}'" >&2
+    hwm=$(docker compose -f "${compose_file}" exec -T redpanda \
+      rpk topic describe integration_test_topic 2>/dev/null \
+      | awk '
+          /HIGH-WATERMARK/ { for(i=1;i<=NF;i++) if($i=="HIGH-WATERMARK") col=i; found=1; next }
+          found && /^[0-9]/ { print $col+0; exit }
+        ')
     if [[ "${hwm:-0}" -gt 0 ]]; then
       echo "Kafka verification: high-water mark = ${hwm} (messages produced)."
     else

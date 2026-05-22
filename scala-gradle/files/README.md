@@ -33,6 +33,18 @@ picatinny.diagnostics.enabled = false
 
 Set diagnostics to `true` only when you need extra JVM/runtime details during troubleshooting.
 
+## Starter defaults for optional plugins
+
+If you enable JDBC or AMQP modules, the generated protocol builders start with
+conservative defaults for first-run safety:
+
+- JDBC `connectionTimeout`: `10 seconds`
+- AMQP `replyTimeout`: `10 seconds`
+- AMQP `consumerThreadsCount`: `1`
+
+Tune these values upward in `{{ .NameWord }}.scala` if your infrastructure is
+slower or your workload needs higher concurrency.
+
 ## Debug
 
 1. Debug test with 1 user, requires proxy on localhost:8888, eg using Fiddler or Wireshark

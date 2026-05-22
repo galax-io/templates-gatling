@@ -25,3 +25,15 @@ src/gatling/resources/
 ./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.Stability
 ./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.MaxPerformance
 ```
+
+## Starter defaults for optional plugins
+
+If you enable JDBC or AMQP modules, the generated `Performance.kt` starts with
+conservative defaults for first-run safety:
+
+- JDBC `connectionTimeout`: `10 seconds`
+- AMQP `replyTimeout`: `10 seconds`
+- AMQP `consumerThreadsCount`: `1`
+
+Tune these values upward in `Performance.kt` if your infrastructure is slower
+or your workload needs higher concurrency.

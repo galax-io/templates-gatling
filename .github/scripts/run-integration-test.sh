@@ -175,9 +175,15 @@ case "${plugin}" in
     ;;
   kafka)
     echo "Verifying Kafka: checking topic 'integration_test_topic' has messages..."
-    docker compose -f "${compose_file}" exec -T redpanda \
-      rpk topic consume integration_test_topic --num 1 --offset start --timeout 10s > /dev/null 2>&1
-    echo "Kafka verification: topic has messages."
+    hwm=$(docker compose -f "${compose_file}" exec -T redpanda \
+      rpk topic describe integration_test_topic -s 2>/dev/null \
+      | awk '/PARTITION/{p=1; next} p{print $3; exit}')
+    if [[ "${hwm:-0}" -gt 0 ]]; then
+      echo "Kafka verification: topic has ${hwm} message(s) (HWM)."
+    else
+      echo "FAIL: Kafka verification — topic 'integration_test_topic' high-watermark is ${hwm:-0}." >&2
+      exit 1
+    fi
     ;;
 esac
 

@@ -258,7 +258,7 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
-`scala-sbt` template targets Picatinny `1.10.3` by default. That release includes
+`scala-sbt` template targets Picatinny `1.12.0` by default. That release includes
 `Utility.banner(injector)` and the current startup diagnostics/config flow used
 by the template.
 

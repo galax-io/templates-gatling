@@ -87,7 +87,7 @@ inputs:
     default: 0.22.0
   KafkaStreamsVersion:
     type: string
-    default: 7.9.5-ce
+    default: 3.9.2
   KafkaTopic:
     type: string
     default: myTopic

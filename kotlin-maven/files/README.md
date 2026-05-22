@@ -2,41 +2,110 @@
 
 Gatling Kotlin project with Maven in Galaxio style.
 
-## Structure
+## Prerequisites
 
-```text
-src/test/kotlin/{{ .PackagePath }}/{{ .NameWord }}/
-  Performance.kt
-  Debug.kt
-  Stability.kt
-  MaxPerformance.kt
-  cases/HttpActions.kt
-  scenarios/HttpScenario.kt
-src/test/resources/
-  simulation.conf
-  gatling.conf
-  logback.xml
-```
+- Java 11 or 17 (LTS)
+- The included `./mvnw` wrapper downloads Maven automatically on first use.
 
-## Run
+## First run
+
+Run the smoke simulation with a single virtual user against the default `baseUrl`:
 
 ```bash
+chmod +x ./mvnw
 ./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Debug
-./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Stability
-./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.MaxPerformance
 ```
 
-`Stability` and `MaxPerformance` declare `injectionProfile` and pass it into
-`Utility.banner(injectionProfile)`.
+A successful run prints a summary table to the console and writes an HTML report to:
 
-## Starter defaults for optional plugins
+```
+target/gatling/<simulation-name>-<timestamp>/index.html
+```
 
-If you enable JDBC or AMQP modules, the generated `Performance.kt` starts with
-conservative defaults for first-run safety:
+If the run fails, see [Troubleshooting](#troubleshooting).
 
-- JDBC `connectionTimeout`: `10 seconds`
-- AMQP `replyTimeout`: `10 seconds`
-- AMQP `consumerThreadsCount`: `1`
+## Project structure
 
-Tune these values upward in `Performance.kt` if your infrastructure is slower
-or your workload needs higher concurrency.
+```text
+src/test/resources/
+  simulation.conf     # runtime parameters
+  gatling.conf        # Gatling engine settings
+  logback.xml         # logging config
+src/test/kotlin/{{ .PackagePath }}/{{ .NameWord }}/
+  Performance.kt      # protocol builders
+  Debug.kt            # single-user smoke simulation
+  Stability.kt        # constant-rate load simulation
+  MaxPerformance.kt   # ramp load simulation
+  cases/              # reusable Gatling actions
+  scenarios/          # scenario assemblers
+```
+
+## Configuration
+
+Runtime parameters live in `src/test/resources/simulation.conf`:
+
+```hocon
+baseUrl    = "{{ .BaseUrl }}"
+intensity  = "{{ .Intensity }}"
+```
+
+Override any parameter at run time with a JVM property:
+
+```bash
+./mvnw gatling:test \
+  -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Stability \
+  -DbaseUrl=https://api.example.com \
+  -Dintensity="120 rpm"
+```
+
+Common overrides:
+
+| Property | Default | Description |
+|---|---|---|
+| `baseUrl` | `{{ .BaseUrl }}` | Target service root URL |
+| `intensity` | `{{ .Intensity }}` | Request rate (e.g. `120 rpm`) |
+| `stagesNumber` | `{{ .StagesNumber }}` | Number of load stages |
+| `rampDuration` | `{{ .RampDuration }}` | Ramp time per stage |
+| `stageDuration` | `{{ .StageDuration }}` | Steady-state duration per stage |
+| `testDuration` | `{{ .TestDuration }}` | Hard time cap for the simulation |
+
+## Load simulations
+
+```bash
+# Ramp load — incrementally increases VUs across stages
+./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.MaxPerformance
+
+# Constant load — ramps once, then holds
+./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Stability
+```
+
+`Stability` and `MaxPerformance` call `Utility.banner(injectionProfile)` at start-up so the console banner matches the workload profile.
+
+## Optional plugin defaults
+
+If JDBC or AMQP modules are enabled, the generated `Performance.kt` uses conservative defaults:
+
+| Setting | Default | Where to change |
+|---|---|---|
+| JDBC `connectionTimeout` | 10 seconds | `Performance.kt` |
+| AMQP `replyTimeout` | 10 seconds | `Performance.kt` |
+| AMQP `consumerThreadsCount` | 1 | `Performance.kt` |
+
+Increase these values if your infrastructure needs more time or higher concurrency.
+
+## Troubleshooting
+
+**Connection refused / timeout on first run**
+- Verify `baseUrl` in `simulation.conf` points to a running service.
+- Run `curl {{ .BaseUrl }}` to confirm reachability.
+
+**`java.lang.UnsupportedClassVersionError`**
+- Check your Java version: `java -version`. Gatling requires Java 11 or 17.
+
+**`./mvnw: Permission denied`**
+- Make the wrapper executable: `chmod +x ./mvnw`
+
+## Links
+
+- Picatinny docs: https://github.com/galax-io/gatling-picatinny
+- Gatling injection docs: https://gatling.io/docs/gatling/reference/current/core/injection/

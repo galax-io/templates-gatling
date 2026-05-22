@@ -1,74 +1,130 @@
-# Gatling Template Project
+# {{ .Name }}
 
-Template project for Gatling performance tests
+Gatling Scala project with Gradle in Galaxio style.
 
-## Project structure
+## Prerequisites
 
-```
-src.gatling.resources - project resources
-src.gatling.scala.{{ .Package }}.{{ .NameWord }}.cases - simple cases
-src.gatling.scala.{{ .Package }}.{{ .NameWord }}.scenarios - common load scenarios assembled from simple cases
-src.gatling.scala.{{ .Package }}.{{ .NameWord }} - common test configs
-```
+- Java 11 or 17 (LTS)
+- The included `./gradlew` wrapper downloads Gradle automatically on first use.
 
-## Test configuration
+## First run
 
-Core runtime parameters live in `src/gatling/resources/simulation.conf` and can be overridden with JVM properties:
+Run the smoke simulation with a single virtual user against the default `baseUrl`:
 
 ```bash
--DbaseUrl=http://localhost
--Dintensity="60 rpm"
--DstagesNumber=2
--DrampDuration="1 minute"
--DstageDuration="5 minutes"
--DtestDuration="15 minutes"
-```
-
-Picatinny startup output is controlled by config:
-
-```hocon
-picatinny.startup.banner.enabled = true
-picatinny.diagnostics.enabled = false
-```
-
-Set diagnostics to `true` only when you need extra JVM/runtime details during troubleshooting.
-
-## Starter defaults for optional plugins
-
-If you enable JDBC or AMQP modules, the generated protocol builders start with
-conservative defaults for first-run safety:
-
-- JDBC `connectionTimeout`: `10 seconds`
-- AMQP `replyTimeout`: `10 seconds`
-- AMQP `consumerThreadsCount`: `1`
-
-Tune these values upward in `{{ .NameWord }}.scala` if your infrastructure is
-slower or your workload needs higher concurrency.
-
-## Debug
-
-1. Debug test with 1 user, requires proxy on localhost:8888, eg using Fiddler or Wireshark
-
-```
+chmod +x ./gradlew
 ./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.Debug
 ```
 
-2. Run test from IDEA with breakpoints
+A successful run prints a summary table to the console and writes an HTML report to:
+
+```
+build/reports/gatling/<simulation-name>-<timestamp>/index.html
+```
+
+If the run fails, see [Troubleshooting](#troubleshooting).
+
+## Project structure
+
+```text
+src/gatling/resources/
+  simulation.conf     # runtime parameters
+  gatling.conf        # Gatling engine settings
+  logback.xml         # logging config
+src/gatling/scala/{{ .PackagePath }}/{{ .NameWord }}/
+  {{ .NameWord }}.scala          # protocol builders
+  Debug.scala         # single-user smoke simulation
+  Stability.scala     # constant-rate load simulation
+  MaxPerformance.scala  # ramp load simulation
+  cases/              # reusable Gatling actions
+  scenarios/          # scenario assemblers
+```
+
+## Configuration
+
+Runtime parameters live in `src/gatling/resources/simulation.conf`:
+
+```hocon
+baseUrl    = "{{ .BaseUrl }}"
+intensity  = "{{ .Intensity }}"
+```
+
+Override any parameter at run time with a JVM property:
+
+```bash
+./gradlew gatlingRun \
+  --simulation {{ .Package }}.{{ .NameWord }}.Stability \
+  -DbaseUrl=https://api.example.com \
+  -Dintensity="120 rpm"
+```
+
+Common overrides:
+
+| Property | Default | Description |
+|---|---|---|
+| `baseUrl` | `{{ .BaseUrl }}` | Target service root URL |
+| `intensity` | `{{ .Intensity }}` | Request rate (e.g. `120 rpm`) |
+| `stagesNumber` | `{{ .StagesNumber }}` | Number of load stages |
+| `rampDuration` | `{{ .RampDuration }}` | Ramp time per stage |
+| `stageDuration` | `{{ .StageDuration }}` | Steady-state duration per stage |
+| `testDuration` | `{{ .TestDuration }}` | Hard time cap for the simulation |
+
+Picatinny startup output is controlled separately:
+
+```hocon
+picatinny.startup.banner.enabled = true
+picatinny.diagnostics.enabled    = false
+```
+
+Set `diagnostics` to `true` for extra JVM/runtime details during troubleshooting.
+
+## Load simulations
+
+```bash
+# Ramp load — incrementally increases VUs across stages
+./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.MaxPerformance
+
+# Constant load — ramps once, then holds
+./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.Stability
+```
+
+Both simulations call `Utility.banner(injector)` at start-up so the console banner matches the workload profile.
+
+## Optional plugin defaults
+
+If JDBC or AMQP modules are enabled, the generated protocol builders use conservative defaults:
+
+| Setting | Default | Where to change |
+|---|---|---|
+| JDBC `connectionTimeout` | 10 seconds | `{{ .NameWord }}.scala` |
+| AMQP `replyTimeout` | 10 seconds | `{{ .NameWord }}.scala` |
+| AMQP `consumerThreadsCount` | 1 | `{{ .NameWord }}.scala` |
+
+Increase these values if your infrastructure needs more time or higher concurrency.
+
+## IDE debugging (optional)
+
+To run with breakpoints in IntelliJ IDEA, use the `GatlingRunner` entry point:
 
 ```
 {{ .Package }}.GatlingRunner
 ```
 
-## Launch test
+No proxy is required; the `Debug` simulation targets `baseUrl` directly with one virtual user.
 
-```
-./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.MaxPerformance
-./gradlew gatlingRun --simulation {{ .Package }}.{{ .NameWord }}.Stability
-```
+## Troubleshooting
 
-Both load simulations define `val injector = ...` and call `Utility.banner(injector)` so startup banner matches workload profile.
+**Connection refused / timeout on first run**
+- Verify `baseUrl` in `simulation.conf` points to a running service.
+- Run `curl {{ .BaseUrl }}` to confirm reachability.
 
-## Help
+**`java.lang.UnsupportedClassVersionError`**
+- Check your Java version: `java -version`. Gatling requires Java 11 or 17.
 
-Picatinny docs: https://github.com/galax-io/gatling-picatinny
-Gatling docs: https://gatling.io/docs/gatling/reference/current/core/injection/
+**`./gradlew: Permission denied`**
+- Make the wrapper executable: `chmod +x ./gradlew`
+
+## Links
+
+- Picatinny docs: https://github.com/galax-io/gatling-picatinny
+- Gatling injection docs: https://gatling.io/docs/gatling/reference/current/core/injection/

@@ -181,17 +181,14 @@ case "${plugin}" in
     fi
     ;;
   kafka)
-    echo "Verifying Kafka: checking topic 'integration_test_topic' exists..."
-    echo "--- rpk topic list ---" >&2
-    docker compose -f "${compose_file}" exec -T redpanda rpk topic list 2>&1 >&2 || true
-    echo "--- rpk topic describe ---" >&2
-    docker compose -f "${compose_file}" exec -T redpanda \
-      rpk topic describe integration_test_topic 2>&1 >&2 || true
-    if docker compose -f "${compose_file}" exec -T redpanda \
-        rpk topic list 2>/dev/null | grep -qF "integration_test_topic"; then
-      echo "Kafka verification: topic 'integration_test_topic' exists (messages were produced)."
+    echo "Verifying Kafka: checking messages were produced to 'integration_test_topic'..."
+    hwm=$(docker compose -f "${compose_file}" exec -T redpanda \
+      rpk topic describe -s integration_test_topic 2>/dev/null \
+      | awk '/^[0-9]/ {print $6; exit}')
+    if [[ "${hwm:-0}" -gt 0 ]]; then
+      echo "Kafka verification: high-water mark = ${hwm} (messages produced)."
     else
-      echo "FAIL: Kafka verification — topic 'integration_test_topic' not found in broker." >&2
+      echo "FAIL: Kafka verification — high-water mark is 0, no messages on topic 'integration_test_topic'." >&2
       exit 1
     fi
     ;;

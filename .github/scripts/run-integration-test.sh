@@ -142,9 +142,8 @@ set +e
 (
   cd "${render_dir}"
   set -o pipefail
-  # shellcheck disable=SC2086
   sbt -batch \
-    ${jvm_overrides[*]} \
+    "${jvm_overrides[@]}" \
     "Gatling/testOnly org.example.performance.ordersapi.Debug" \
     2>&1 | tee "${run_log}"
 )

@@ -4,15 +4,17 @@ Gatling Scala project with sbt in Galaxio style.
 
 ## Prerequisites
 
-- Java 11 or 17 (LTS)
+- Java 17 (default; see `JavaVersion` template input to change)
 - sbt 1.x (`sbt --version` to check)
+- A service running at `baseUrl` (default: `{{ .BaseUrl }}`)
 
 ## First run
 
-Run the smoke simulation with a single virtual user against the default `baseUrl`:
+Point `baseUrl` at a running service, then run the smoke simulation with a single virtual user:
 
 ```bash
-sbt -batch "Gatling/testOnly {{ .Package }}.{{ .NameWord }}.Debug"
+sbt -batch -DbaseUrl=https://your-service.example.com \
+    "Gatling/testOnly {{ .Package }}.{{ .NameWord }}.Debug"
 ```
 
 A successful run prints a summary table to the console and writes an HTML report to:

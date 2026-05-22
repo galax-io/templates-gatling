@@ -4,16 +4,17 @@ Gatling Kotlin project with Maven in Galaxio style.
 
 ## Prerequisites
 
-- Java 11 or 17 (LTS)
+- Java 17 (default; see `JavaVersion` template input to change)
 - The included `./mvnw` wrapper downloads Maven automatically on first use.
+- A service running at `baseUrl` (default: `{{ .BaseUrl }}`)
 
 ## First run
 
-Run the smoke simulation with a single virtual user against the default `baseUrl`:
+Point `baseUrl` at a running service, then run the smoke simulation with a single virtual user:
 
 ```bash
 chmod +x ./mvnw
-./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Debug
+./mvnw gatling:test -Dgatling.simulationClass={{ .Package }}.{{ .NameWord }}.Debug -DbaseUrl=https://your-service.example.com
 ```
 
 A successful run prints a summary table to the console and writes an HTML report to:

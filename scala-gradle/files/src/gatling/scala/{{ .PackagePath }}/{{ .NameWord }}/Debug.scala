@@ -17,8 +17,6 @@ import {{ .Package }}.{{ .NameWord }}.scenarios._
 class Debug extends Simulation {
   org.galaxio.gatling.utils.Utility.diagnostics()
 
-  // proxy is required on localhost:8888
-
   setUp(
     HttpScenario().inject(atOnceUsers(1)),
 {{- if eq .KafkaPluginEnabled "true" }}
@@ -41,7 +39,6 @@ class Debug extends Simulation {
 {{- if eq .AmqpPluginEnabled "true" }}
     amqpProtocol,
 {{- end }}
-    //        .proxy(Proxy("localhost", 8888).httpsPort(8888))
   ).maxDuration(testDuration)
 
 }

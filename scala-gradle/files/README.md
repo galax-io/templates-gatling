@@ -94,13 +94,13 @@ Both simulations call `Utility.banner(injector)` at start-up so the console bann
 
 If JDBC or AMQP modules are enabled, the generated protocol builders use conservative defaults:
 
-| Setting | Default | Where to change |
-|---|---|---|
-| JDBC `connectionTimeout` | 10 seconds | `{{ .NameWord }}.scala` |
-| AMQP `replyTimeout` | 10 seconds | `{{ .NameWord }}.scala` |
-| AMQP `consumerThreadsCount` | 1 | `{{ .NameWord }}.scala` |
+| Setting | Default |
+|---|---|
+| JDBC `connectionTimeout` | 10 seconds |
+| AMQP `replyTimeout` | 10 seconds |
+| AMQP `consumerThreadsCount` | 1 |
 
-Increase these values if your infrastructure needs more time or higher concurrency.
+Tune these values in the protocol builder file (`{{ .NameWord }}.scala`) if your infrastructure needs more time or higher concurrency.
 
 ## IDE debugging (optional)
 

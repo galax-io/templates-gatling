@@ -85,13 +85,13 @@ Common overrides:
 
 If JDBC or AMQP modules are enabled, the generated `Performance.kt` uses conservative defaults:
 
-| Setting | Default | Where to change |
-|---|---|---|
-| JDBC `connectionTimeout` | 10 seconds | `Performance.kt` |
-| AMQP `replyTimeout` | 10 seconds | `Performance.kt` |
-| AMQP `consumerThreadsCount` | 1 | `Performance.kt` |
+| Setting | Default |
+|---|---|
+| JDBC `connectionTimeout` | 10 seconds |
+| AMQP `replyTimeout` | 10 seconds |
+| AMQP `consumerThreadsCount` | 1 |
 
-Increase these values if your infrastructure needs more time or higher concurrency.
+Tune these values in `Performance.kt` if your infrastructure needs more time or higher concurrency.
 
 ## Troubleshooting
 

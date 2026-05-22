@@ -85,13 +85,13 @@ Common overrides:
 
 If JDBC or AMQP modules are enabled, the generated `Performance.java` uses conservative defaults:
 
-| Setting | Default | Where to change |
-|---|---|---|
-| JDBC `connectionTimeout` | 10 seconds | `Performance.java` |
-| AMQP `replyTimeout` | 10 seconds | `Performance.java` |
-| AMQP `consumerThreadsCount` | 1 | `Performance.java` |
+| Setting | Default |
+|---|---|
+| JDBC `connectionTimeout` | 10 seconds |
+| AMQP `replyTimeout` | 10 seconds |
+| AMQP `consumerThreadsCount` | 1 |
 
-Increase these values if your infrastructure needs more time or higher concurrency.
+Tune these values in `Performance.java` if your infrastructure needs more time or higher concurrency.
 
 ## Troubleshooting
 

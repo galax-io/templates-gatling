@@ -34,6 +34,7 @@ run_log="${render_dir}/run.log"
 compose_file="${COMPOSE_FILE:-${workspace_root}/.github/integration/docker-compose.yml}"
 start_time="$(date +%s)"
 template="scala-sbt"
+timeout_bin="$(command -v timeout || command -v gtimeout || true)"
 
 # -- Map plugin to template flags and JVM overrides -----------------------
 case "${plugin}" in
@@ -134,6 +135,19 @@ case "${plugin}" in
     docker compose -f "${compose_file}" exec -T rabbitmq \
       rabbitmqadmin declare queue name=integration_test_queue durable=false
     ;;
+  kafka)
+    echo "Declaring Kafka topic 'integration_test_topic'..."
+    set +e
+    kafka_create_output="$(docker compose -f "${compose_file}" exec -T redpanda \
+      rpk topic create integration_test_topic -p 1 -r 1 2>&1)"
+    kafka_create_status=$?
+    set -e
+    echo "${kafka_create_output}"
+    if [[ "${kafka_create_status}" -ne 0 && "${kafka_create_output}" != *"TOPIC_ALREADY_EXISTS"* ]]; then
+      echo "FAIL: unable to declare Kafka topic 'integration_test_topic'." >&2
+      exit 1
+    fi
+    ;;
 esac
 
 # -- Run the Debug simulation against real services -----------------------
@@ -181,17 +195,26 @@ case "${plugin}" in
     fi
     ;;
   kafka)
-    echo "Verifying Kafka: checking messages were produced to 'integration_test_topic'..."
-    hwm=$(docker compose -f "${compose_file}" exec -T redpanda \
-      rpk topic describe integration_test_topic 2>/dev/null \
-      | awk '
-          /HIGH-WATERMARK/ { for(i=1;i<=NF;i++) if($i=="HIGH-WATERMARK") col=i; found=1; next }
-          found && /^[0-9]/ { print $col+0; exit }
-        ')
-    if [[ "${hwm:-0}" -gt 0 ]]; then
-      echo "Kafka verification: high-water mark = ${hwm} (messages produced)."
+    echo "Verifying Kafka: consuming one message from 'integration_test_topic'..."
+    set +e
+    if [[ -n "${timeout_bin}" ]]; then
+      kafka_message="$("${timeout_bin}" 15s docker compose -f "${compose_file}" exec -T redpanda \
+        rpk topic consume integration_test_topic -n 1 -o start -f '%v\n' 2>/dev/null)"
     else
-      echo "FAIL: Kafka verification — high-water mark is 0, no messages on topic 'integration_test_topic'." >&2
+      kafka_message="$(docker compose -f "${compose_file}" exec -T redpanda \
+        rpk topic consume integration_test_topic -n 1 -o start -f '%v\n' 2>/dev/null)"
+    fi
+    kafka_status=$?
+    set -e
+    kafka_message="$(printf '%s' "${kafka_message}" | tr -d '\r')"
+    if [[ "${kafka_status}" -eq 0 && -n "${kafka_message}" ]]; then
+      echo "Kafka verification: consumed message '${kafka_message}'."
+    else
+      echo "FAIL: Kafka verification — no consumable message observed on topic 'integration_test_topic'." >&2
+      echo "--- Kafka debug: topic list ---" >&2
+      docker compose -f "${compose_file}" exec -T redpanda rpk topic list >&2 || true
+      echo "--- Kafka debug: topic describe ---" >&2
+      docker compose -f "${compose_file}" exec -T redpanda rpk topic describe integration_test_topic >&2 || true
       exit 1
     fi
     ;;

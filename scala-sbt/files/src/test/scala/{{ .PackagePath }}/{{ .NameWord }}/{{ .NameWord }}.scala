@@ -42,7 +42,7 @@ package object {{ .NameWord }} {
     .url(getStringParam("dbUrl"))
     .username(getStringParam("dbUser"))
     .password(getStringParam("dbPassword"))
-    .connectionTimeout(2.minutes)
+    .connectionTimeout(10.seconds)
     .protocolBuilder
 {{- end }}
 {{- if eq .AmqpPluginEnabled "true" }}
@@ -56,8 +56,8 @@ package object {{ .NameWord }} {
         .password(getStringParam("amqpPassword"))
         .vhost("/"),
     )
-    .replyTimeout(60000)
-    .consumerThreadsCount(8)
+    .replyTimeout(10000)
+    .consumerThreadsCount(1)
     .usePersistentDeliveryMode
 {{- end }}
 

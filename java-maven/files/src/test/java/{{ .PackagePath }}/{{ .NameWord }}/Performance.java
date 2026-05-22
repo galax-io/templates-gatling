@@ -49,7 +49,7 @@ public final class Performance {
                 .url(getStringParam("dbUrl"))
                 .username(getStringParam("dbUser"))
                 .password(getStringParam("dbPassword"))
-                .connectionTimeout(Duration.ofMinutes(2))
+                .connectionTimeout(Duration.ofSeconds(10))
                 .protocolBuilder();
     }
 {{- end }}
@@ -66,8 +66,8 @@ public final class Performance {
                                 .vhost("/")
                                 .build()
                 )
-                .replyTimeout(60000L)
-                .consumerThreadsCount(8)
+                .replyTimeout(10000L)
+                .consumerThreadsCount(1)
                 .usePersistentDeliveryMode();
     }
 {{- end }}

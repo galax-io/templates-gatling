@@ -3,7 +3,6 @@ kind: Template
 name: kotlin-maven
 displayName: Gatling Kotlin maven
 description: Gatling Kotlin project with Maven
-version: 0.2.8
 engine: go-template
 tags:
   - gatling

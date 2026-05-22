@@ -78,7 +78,7 @@ inputs:
     default: "false"
   KafkaPluginVersion:
     type: string
-    default: 1.0.0-RC1
+    default: 0.22.0
   KafkaStreamsVersion:
     type: string
     default: 7.9.5-ce

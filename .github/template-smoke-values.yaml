@@ -20,6 +20,6 @@ Pacing: 1 second
 ScenarioName: Orders smoke flow
 StartupBannerEnabled: "true"
 DiagnosticsEnabled: "false"
-KafkaPluginVersion: 1.0.0-RC1
+KafkaPluginVersion: 0.22.0
 JdbcPluginVersion: 0.19.0
 AmqpPluginVersion: 1.2.0

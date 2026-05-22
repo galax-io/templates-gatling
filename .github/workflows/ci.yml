@@ -351,10 +351,9 @@ jobs:
             ${{ runner.os }}-sbt-integration-
             ${{ runner.os }}-sbt-
 
-      - name: Start services
+      - name: Start services and wait for health
         run: |
-          docker compose -f .github/integration/docker-compose.yml up -d
-          echo "Waiting for services to be healthy..."
+          docker compose -f .github/integration/docker-compose.yml up -d --wait
           docker compose -f .github/integration/docker-compose.yml ps
 
       - name: Run integration test

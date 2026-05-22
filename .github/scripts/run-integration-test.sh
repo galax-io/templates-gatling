@@ -10,12 +10,14 @@
 # Expects:
 #   - galaxio binary on PATH
 #   - sbt on PATH (or available via SDKMAN)
-#   - Docker services already running (started by CI or docker-compose up)
+#   - Docker services already running and healthy (started by CI via
+#     docker compose up --wait)
 #
 # Environment:
 #   RUNNER_TEMP         — temp directory (default: mktemp -d)
 #   GITHUB_WORKSPACE    — repo root (default: detected from script path)
 #   GITHUB_STEP_SUMMARY — optional step summary file for CI
+#   COMPOSE_FILE        — docker-compose file path (default: detected)
 set -euo pipefail
 
 plugin="${1:?plugin name required: jdbc | amqp | kafka}"
@@ -29,6 +31,7 @@ config_file="${runner_temp}/galaxio-config-integration.yaml"
 render_dir="${runner_temp}/integration/${plugin}"
 compile_log="${render_dir}/compile.log"
 run_log="${render_dir}/run.log"
+compose_file="${COMPOSE_FILE:-${workspace_root}/.github/integration/docker-compose.yml}"
 start_time="$(date +%s)"
 template="scala-sbt"
 
@@ -114,26 +117,16 @@ fi
 
 echo "Compilation succeeded."
 
-# -- Wait for required services -------------------------------------------
-wait_for_port() {
-  local host="$1" port="$2" name="$3" retries="${4:-30}"
-  echo "Waiting for ${name} on ${host}:${port}..."
-  for (( i=1; i<=retries; i++ )); do
-    if nc -z "${host}" "${port}" 2>/dev/null; then
-      echo "${name} is ready."
-      return 0
-    fi
-    sleep 2
-  done
-  echo "FAIL: ${name} not reachable on ${host}:${port} after $((retries * 2))s" >&2
-  return 1
-}
-
-wait_for_port localhost 8080 "HTTP mock"
+# -- Pre-provision service resources --------------------------------------
+# Services are expected to be healthy already (docker compose up --wait).
+# Some plugins need resources (queues, topics) declared before the first
+# publish so the broker doesn't silently drop messages.
 case "${plugin}" in
-  jdbc)  wait_for_port localhost 5432 "PostgreSQL" ;;
-  amqp)  wait_for_port localhost 5672 "RabbitMQ" ;;
-  kafka) wait_for_port localhost 9092 "Redpanda/Kafka" ;;
+  amqp)
+    echo "Declaring AMQP queue 'integration_test_queue'..."
+    docker compose -f "${compose_file}" exec -T rabbitmq \
+      rabbitmqadmin declare queue name=integration_test_queue durable=false
+    ;;
 esac
 
 # -- Run the Debug simulation against real services -----------------------
@@ -150,6 +143,44 @@ set +e
 run_status=$?
 set -e
 
+if [[ "${run_status}" -ne 0 ]]; then
+  echo "FAIL: Debug simulation failed for ${template}+${plugin}" >&2
+  echo "--- Run log (last 50 lines) ---" >&2
+  tail -50 "${run_log}" >&2
+  exit 1
+fi
+
+# -- Post-run verification ------------------------------------------------
+# Check that the plugin actually communicated with the service, not just
+# that the Gatling process exited 0.
+case "${plugin}" in
+  jdbc)
+    echo "Verifying JDBC: checking table 'mytable' exists in PostgreSQL..."
+    docker compose -f "${compose_file}" exec -T postgres \
+      psql -U postgres -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mytable')" \
+      | grep -q "t"
+    echo "JDBC verification: table 'mytable' exists."
+    ;;
+  amqp)
+    echo "Verifying AMQP: checking queue 'integration_test_queue' received messages..."
+    msg_count=$(docker compose -f "${compose_file}" exec -T rabbitmq \
+      rabbitmqctl list_queues name messages --formatter json \
+      | python3 -c "import sys,json; qs=json.load(sys.stdin); print(next((q['messages'] for q in qs if q['name']=='integration_test_queue'), 0))")
+    if [[ "${msg_count}" -gt 0 ]]; then
+      echo "AMQP verification: queue has ${msg_count} message(s)."
+    else
+      echo "FAIL: AMQP verification — queue 'integration_test_queue' has 0 messages." >&2
+      exit 1
+    fi
+    ;;
+  kafka)
+    echo "Verifying Kafka: checking topic 'integration_test_topic' has messages..."
+    docker compose -f "${compose_file}" exec -T redpanda \
+      rpk topic consume integration_test_topic --num 1 --timeout 5s > /dev/null 2>&1
+    echo "Kafka verification: topic has messages."
+    ;;
+esac
+
 # -- Report results -------------------------------------------------------
 duration="$(( $(date +%s) - start_time ))"
 
@@ -158,20 +189,9 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo "### Integration: ${template} + ${plugin}"
     echo
     echo "- Duration: \`${duration}s\`"
-    if [[ "${run_status}" -eq 0 ]]; then
-      echo "- Result: **success**"
-    else
-      echo "- Result: **failure**"
-    fi
+    echo "- Result: **success** (verified)"
     echo
   } >> "${GITHUB_STEP_SUMMARY}"
-fi
-
-if [[ "${run_status}" -ne 0 ]]; then
-  echo "FAIL: Debug simulation failed for ${template}+${plugin}" >&2
-  echo "--- Run log (last 50 lines) ---" >&2
-  tail -50 "${run_log}" >&2
-  exit 1
 fi
 
 echo "=== Integration test PASSED: ${template} + ${plugin} (${duration}s) ==="

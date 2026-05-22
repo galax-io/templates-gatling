@@ -50,6 +50,12 @@
             <version>{{ .JdbcPluginVersion }}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>{{ .PostgresDriverVersion }}</version>
+            <scope>test</scope>
+        </dependency>
 {{- end }}
 {{- if eq .AmqpPluginEnabled "true" }}
         <dependency>

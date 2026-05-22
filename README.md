@@ -13,31 +13,31 @@ The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 apiVersion: galaxio.io/v1
 kind: TemplatePack
 name: gatling
-version: 0.14.1
+version: 0.14.3
 description: Gatling performance testing templates
 templates:
   - name: scala-sbt
-    version: 0.2.0
+    version: 0.2.4
     path: scala-sbt
     description: Gatling Scala project with sbt
   - name: java-maven
-    version: 0.2.0
+    version: 0.2.5
     path: java-maven
     description: Gatling Java project with Maven
   - name: kotlin-maven
-    version: 0.2.0
+    version: 0.2.5
     path: kotlin-maven
     description: Gatling Kotlin project with Maven
   - name: scala-gradle
-    version: 0.2.0
+    version: 0.2.5
     path: scala-gradle
     description: Gatling Scala project with Gradle
   - name: java-gradle
-    version: 0.2.0
+    version: 0.2.5
     path: java-gradle
     description: Gatling Java project with Gradle
   - name: kotlin-gradle
-    version: 0.2.0
+    version: 0.2.5
     path: kotlin-gradle
     description: Gatling Kotlin project with Gradle
 ```
@@ -76,6 +76,20 @@ When enabled, the template:
 - adds plugin dependency to the build file
 - adds `kafkaUrl` / `dbUrl` / `amqpHost` etc. to `simulation.conf`
 - overlays `cases/KafkaActions` and `scenarios/KafkaScenario` source files
+
+### Starter plugin defaults
+
+Generated projects intentionally use conservative starter defaults for optional
+JDBC and AMQP modules so first runs fail fast on unstable local infrastructure
+instead of stalling for a long time or over-allocating consumers.
+
+- JDBC `connectionTimeout` defaults to `10 seconds`
+- AMQP `replyTimeout` defaults to `10 seconds`
+- AMQP `consumerThreadsCount` defaults to `1`
+
+These are starter values, not production tuning guidance. If your environment
+is slower or you need more throughput, adjust the generated protocol builders in
+`Performance.*` after rendering the project.
 
 ### Directory structure
 
@@ -243,7 +257,7 @@ bash .github/scripts/check-template-version-bump_test.sh
 
 Releases are tag-driven. After merging changes to `main`:
 
-1. Push a tag matching the pack version: `git tag v0.14.1 && git push origin v0.14.1`
+1. Push a tag matching the pack version: `git tag v0.14.3 && git push origin v0.14.3`
 2. The release workflow triggers automatically and creates a GitHub Release with auto-generated notes
 3. The workflow validates that the tag matches the `version` in `galaxio-pack.yaml`
 

@@ -3,6 +3,7 @@ kind: Template
 name: scala-gradle
 displayName: Gatling Scala gradle
 description: Gatling Scala project with Gradle
+version: 0.2.7
 engine: go-template
 tags:
   - gatling

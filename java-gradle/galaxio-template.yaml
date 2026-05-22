@@ -3,6 +3,7 @@ kind: Template
 name: java-gradle
 displayName: Gatling Java gradle
 description: Gatling Java project with Gradle
+version: 0.2.8
 engine: go-template
 tags:
   - gatling

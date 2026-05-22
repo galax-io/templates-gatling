@@ -176,7 +176,7 @@ case "${plugin}" in
   kafka)
     echo "Verifying Kafka: checking topic 'integration_test_topic' has messages..."
     docker compose -f "${compose_file}" exec -T redpanda \
-      rpk topic consume integration_test_topic --num 1 --timeout 5s > /dev/null 2>&1
+      rpk topic consume integration_test_topic --num 1 --offset start --timeout 10s > /dev/null 2>&1
     echo "Kafka verification: topic has messages."
     ;;
 esac

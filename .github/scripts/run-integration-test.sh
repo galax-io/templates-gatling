@@ -39,6 +39,7 @@ template="scala-sbt"
 case "${plugin}" in
   jdbc)
     plugin_flag="JdbcPluginEnabled"
+    render_overrides=()
     jvm_overrides=(
       "-DbaseUrl=http://localhost:8080"
       "-DdbUrl=jdbc:postgresql://localhost:5432/postgres"
@@ -49,22 +50,21 @@ case "${plugin}" in
     ;;
   amqp)
     plugin_flag="AmqpPluginEnabled"
+    render_overrides=("AmqpQueue=integration_test_queue")
     jvm_overrides=(
       "-DbaseUrl=http://localhost:8080"
       "-DamqpHost=localhost"
       "-DamqpPort=5672"
       "-DamqpLogin=guest"
       "-DamqpPassword=guest"
-      "-DamqpQueue=integration_test_queue"
       "-DtestDuration=10 seconds"
     )
     ;;
   kafka)
     plugin_flag="KafkaPluginEnabled"
+    render_overrides=("KafkaTopic=integration_test_topic" "KafkaUrl=localhost:9092")
     jvm_overrides=(
       "-DbaseUrl=http://localhost:8080"
-      "-DkafkaUrl=localhost:9092"
-      "-DkafkaTopic=integration_test_topic"
       "-DtestDuration=10 seconds"
     )
     ;;
@@ -91,10 +91,17 @@ EOF
 export GALAXIO_CONFIG="${config_file}"
 
 galaxio template configure --registry "local:${registry_root}" >/dev/null
-galaxio template init "gatling/${template}" \
-  --destination "${render_dir}" \
-  --values "${values_file}" \
+
+render_args=(
+  "gatling/${template}"
+  --destination "${render_dir}"
+  --values "${values_file}"
   --set "${plugin_flag}=true"
+)
+for override in "${render_overrides[@]}"; do
+  render_args+=(--set "${override}")
+done
+galaxio template init "${render_args[@]}"
 
 echo "Template rendered."
 

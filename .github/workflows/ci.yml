@@ -299,3 +299,74 @@ jobs:
           name: rendered-${{ matrix.template }}
           path: ${{ runner.temp }}/rendered/${{ matrix.template }}
           if-no-files-found: ignore
+
+  integration:
+    name: integration-${{ matrix.plugin }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - build-galaxio
+      - pack-validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plugin: jdbc
+          - plugin: amqp
+          - plugin: kafka
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download galaxio binary
+        uses: actions/download-artifact@v4
+        with:
+          name: galaxio-linux-amd64
+          path: ${{ runner.temp }}/galaxio-bin
+
+      - name: Add galaxio to PATH
+        run: |
+          chmod +x "${RUNNER_TEMP}/galaxio-bin/galaxio"
+          echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Cache sbt, ivy, and coursier
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-${{ hashFiles('.github/template-smoke-values.yaml', 'scala-sbt/galaxio-template.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-
+            ${{ runner.os }}-sbt-integration-
+            ${{ runner.os }}-sbt-
+
+      - name: Start services and wait for health
+        run: |
+          docker compose -f .github/integration/docker-compose.yml up -d --wait
+          docker compose -f .github/integration/docker-compose.yml ps
+
+      - name: Run integration test
+        run: bash .github/scripts/run-integration-test.sh "${{ matrix.plugin }}"
+
+      - name: Upload run log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-log-${{ matrix.plugin }}
+          path: ${{ runner.temp }}/integration/${{ matrix.plugin }}/run.log
+          if-no-files-found: ignore
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f .github/integration/docker-compose.yml down -v

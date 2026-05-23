@@ -5,8 +5,9 @@
 #   bash .github/scripts/update-readme-compat.sh
 #
 # Reads:
-#   galaxio-pack.yaml                 — pack version + per-template versions
-#   scala-sbt/galaxio-template.yaml   — canonical GatlingVersion / GatlingPicatinnyVersion defaults
+#   galaxio-pack.yaml              — pack version, minCliVersion, per-template versions
+#   */galaxio-template.yaml        — GatlingVersion / GatlingPicatinnyVersion defaults
+#                                    (all templates must agree; script fails on divergence)
 #
 # Replaces the block between:
 #   <!-- compat-table-start -->
@@ -19,7 +20,6 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readme="${repo_root}/README.md"
 pack_yaml="${repo_root}/galaxio-pack.yaml"
-ref_template="${repo_root}/scala-sbt/galaxio-template.yaml"
 
 # Verify sentinels exist before proceeding
 if ! grep -q '<!-- compat-table-start -->' "${readme}"; then
@@ -27,14 +27,18 @@ if ! grep -q '<!-- compat-table-start -->' "${readme}"; then
   exit 1
 fi
 
-# -- Extract values with grep/awk (no PyYAML required) --
-# Pack version: first `version:` line in pack yaml (top-level)
+# -- Extract pack-level values -----------------------------------------------
 pack_version=$(grep -m1 '^version:' "${pack_yaml}" | awk '{print $2}')
+min_cli_version=$(grep -m1 '^minCliVersion:' "${pack_yaml}" | awk '{print $2}')
 
-# Template versions: lines after `- name: <template>` blocks
+if [[ -z "${min_cli_version}" ]]; then
+  echo "ERROR: minCliVersion not set in galaxio-pack.yaml" >&2
+  exit 1
+fi
+
+# Template versions: find `- name: <template>` block, grab next `version:` line
 get_template_version() {
   local name="$1"
-  # Find the block starting with "- name: <name>" and grab the next "version:" line
   awk "/- name: ${name}/{found=1} found && /version:/{print \$2; exit}" "${pack_yaml}"
 }
 
@@ -45,18 +49,42 @@ java_gradle_ver=$(get_template_version "java-gradle")
 kotlin_maven_ver=$(get_template_version "kotlin-maven")
 kotlin_gradle_ver=$(get_template_version "kotlin-gradle")
 
-# Gatling/Picatinny: find `  GatlingVersion:` block, grab `default:` on next non-empty line
+# -- Read + cross-validate Gatling/Picatinny defaults across all templates ----
 get_input_default() {
-  local key="$1"
-  awk "/^  ${key}:/{found=1} found && /default:/{print \$2; exit}" "${ref_template}"
+  local manifest="$1" key="$2"
+  awk "/^  ${key}:/{found=1} found && /default:/{print \$2; exit}" "${manifest}"
 }
 
-gatling_version=$(get_input_default "GatlingVersion")
-picatinny_version=$(get_input_default "GatlingPicatinnyVersion")
+templates="scala-sbt scala-gradle java-maven java-gradle kotlin-maven kotlin-gradle"
+ref_gatling=""
+ref_picatinny=""
+diverged=0
 
-echo "Pack: ${pack_version} | Gatling: ${gatling_version} | Picatinny: ${picatinny_version}"
+for tmpl in ${templates}; do
+  manifest="${repo_root}/${tmpl}/galaxio-template.yaml"
+  g=$(get_input_default "${manifest}" "GatlingVersion")
+  p=$(get_input_default "${manifest}" "GatlingPicatinnyVersion")
 
-# -- Build new block content --
+  if [[ -z "${ref_gatling}" ]]; then
+    ref_gatling="${g}"
+    ref_picatinny="${p}"
+  elif [[ "${g}" != "${ref_gatling}" || "${p}" != "${ref_picatinny}" ]]; then
+    echo "WARNING: ${tmpl} has diverging defaults: Gatling=${g} (expected ${ref_gatling}), Picatinny=${p} (expected ${ref_picatinny})" >&2
+    diverged=1
+  fi
+done
+
+if [[ "${diverged}" -eq 1 ]]; then
+  echo "ERROR: Template defaults are not uniform. Fix the manifests or update the script to render per-template values." >&2
+  exit 1
+fi
+
+gatling_version="${ref_gatling}"
+picatinny_version="${ref_picatinny}"
+
+echo "Pack: ${pack_version} | minCliVersion: ${min_cli_version} | Gatling: ${gatling_version} | Picatinny: ${picatinny_version}"
+
+# -- Build new block content --------------------------------------------------
 new_block="<!-- compat-table-start -->
 > **Auto-generated** — do not edit this block manually. Run \`bash .github/scripts/update-readme-compat.sh\` to refresh.
 
@@ -75,12 +103,11 @@ galaxio template init gatling/scala-sbt \\\\
   --set GatlingPicatinnyVersion=1.13.0
 \`\`\`
 
-The pack \`apiVersion: galaxio.io/v1\` requires a CLI build that supports the v1 schema.
-Consult the \`galaxio-cli\` release notes for the minimum compatible CLI version.
+The pack uses \`apiVersion: galaxio.io/v1\`, which requires **galaxio-cli \`>= ${min_cli_version}\`**.
 
 ### Version table
 
-Pack version: \`${pack_version}\` · Gatling default: \`${gatling_version}\` · Picatinny default: \`${picatinny_version}\`
+Pack \`${pack_version}\` · min CLI \`${min_cli_version}\` · Gatling \`${gatling_version}\` · Picatinny \`${picatinny_version}\`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|
@@ -91,11 +118,11 @@ Pack version: \`${pack_version}\` · Gatling default: \`${gatling_version}\` · 
 | \`kotlin-maven\` | Kotlin | Maven | \`${kotlin_maven_ver}\` | \`${gatling_version}\` | \`${picatinny_version}\` |
 | \`kotlin-gradle\` | Kotlin | Gradle | \`${kotlin_gradle_ver}\` | \`${gatling_version}\` | \`${picatinny_version}\` |
 
-All templates share the same Gatling and Picatinny defaults. See
-[\`galaxio-pack.yaml\`](galaxio-pack.yaml) for the authoritative template version list.
+All templates share the same Gatling and Picatinny defaults; the script validates this on every run.
+See [\`galaxio-pack.yaml\`](galaxio-pack.yaml) for the authoritative template version list.
 <!-- compat-table-end -->"
 
-# -- Replace block in README.md (python3 stdlib only) --
+# -- Replace block in README.md (python3 stdlib only) ------------------------
 python3 - "${readme}" <<PYEOF
 import re, sys
 

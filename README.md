@@ -272,16 +272,17 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
+<!-- compat-table-start -->
+> **Auto-generated** — do not edit this block manually. Run `bash .github/scripts/update-readme-compat.sh` to refresh.
+
 ### Render-time vs runtime versions
 
-**Pack version** (`0.14.7`) is render-time metadata: it is the version that
-`galaxio-cli` resolves when you run `galaxio template init gatling/<template>`.
-The CLI downloads the pack matching this version from the registry.
+**Pack version** (`0.14.7`) is render-time metadata: `galaxio-cli` resolves this
+version when you run `galaxio template init gatling/<template>` and downloads the matching pack
+from the registry.
 
-**Gatling** and **Picatinny** versions listed below are *default runtime dependency
-values* that the CLI injects into the generated project's build file. They are not
-locked — you can override any of them at render time with `--set Flag=value`, for
-example:
+**Gatling** and **Picatinny** versions are *default runtime dependency values* injected into the
+generated project's build file. Override any of them at render time with `--set Flag=value`:
 
 ```bash
 galaxio template init gatling/scala-sbt \
@@ -289,26 +290,25 @@ galaxio template init gatling/scala-sbt \
   --set GatlingPicatinnyVersion=1.13.0
 ```
 
-The pack `apiVersion: galaxio.io/v1` requires a CLI build that supports the v1
-pack schema. Consult the `galaxio-cli` release notes for the minimum compatible
-CLI version.
+The pack `apiVersion: galaxio.io/v1` requires a CLI build that supports the v1 schema.
+Consult the `galaxio-cli` release notes for the minimum compatible CLI version.
 
 ### Version table
 
-All templates in this pack share the same Gatling and Picatinny defaults.
-Override any value with `--set Flag=value` at render time.
+Pack version: `0.14.7` · Gatling default: `3.13.5` · Picatinny default: `1.12.0`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|
-| `scala-sbt` | Scala | sbt | 0.2.8 | 3.13.5 | 1.12.0 |
-| `scala-gradle` | Scala | Gradle | 0.2.8 | 3.13.5 | 1.12.0 |
-| `java-maven` | Java | Maven | 0.2.9 | 3.13.5 | 1.12.0 |
-| `java-gradle` | Java | Gradle | 0.2.9 | 3.13.5 | 1.12.0 |
-| `kotlin-maven` | Kotlin | Maven | 0.2.9 | 3.13.5 | 1.12.0 |
-| `kotlin-gradle` | Kotlin | Gradle | 0.2.9 | 3.13.5 | 1.12.0 |
+| `scala-sbt` | Scala | sbt | `0.2.8` | `3.13.5` | `1.12.0` |
+| `scala-gradle` | Scala | Gradle | `0.2.8` | `3.13.5` | `1.12.0` |
+| `java-maven` | Java | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
+| `java-gradle` | Java | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
+| `kotlin-maven` | Kotlin | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
+| `kotlin-gradle` | Kotlin | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
 
-Pack version: `0.14.7`. Template versions are tracked independently; see
-[`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative list.
+All templates share the same Gatling and Picatinny defaults. See
+[`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.
+<!-- compat-table-end -->
 
 ## Validation
 

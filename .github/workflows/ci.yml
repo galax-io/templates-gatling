@@ -149,6 +149,17 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./.github/scripts/check-template-version-bump.sh
 
+      - name: Check README compatibility table is up to date
+        run: |
+          bash ./.github/scripts/update-readme-compat.sh
+          if ! git diff --quiet README.md; then
+            echo "README compatibility table is stale. Run:" >&2
+            echo "  bash .github/scripts/update-readme-compat.sh" >&2
+            echo "" >&2
+            git diff README.md >&2
+            exit 1
+          fi
+
   build-galaxio:
     runs-on: ubuntu-latest
     timeout-minutes: 10

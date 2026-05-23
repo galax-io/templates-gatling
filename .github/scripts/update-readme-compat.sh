@@ -5,9 +5,9 @@
 #   bash .github/scripts/update-readme-compat.sh
 #
 # Reads:
-#   galaxio-pack.yaml              — pack version, minCliVersion, per-template versions
-#   */galaxio-template.yaml        — GatlingVersion / GatlingPicatinnyVersion defaults
-#                                    (all templates must agree; script fails on divergence)
+#   galaxio-pack.yaml         — pack version, per-template versions
+#   */galaxio-template.yaml   — GatlingVersion / GatlingPicatinnyVersion defaults
+#                               (all templates must agree; script fails on divergence)
 #
 # Replaces the block between:
 #   <!-- compat-table-start -->
@@ -29,12 +29,6 @@ fi
 
 # -- Extract pack-level values -----------------------------------------------
 pack_version=$(grep -m1 '^version:' "${pack_yaml}" | awk '{print $2}')
-min_cli_version=$(grep -m1 '^minCliVersion:' "${pack_yaml}" | awk '{print $2}')
-
-if [[ -z "${min_cli_version}" ]]; then
-  echo "ERROR: minCliVersion not set in galaxio-pack.yaml" >&2
-  exit 1
-fi
 
 # Template versions: find `- name: <template>` block, grab next `version:` line
 get_template_version() {
@@ -82,7 +76,7 @@ fi
 gatling_version="${ref_gatling}"
 picatinny_version="${ref_picatinny}"
 
-echo "Pack: ${pack_version} | minCliVersion: ${min_cli_version} | Gatling: ${gatling_version} | Picatinny: ${picatinny_version}"
+echo "Pack: ${pack_version} | Gatling: ${gatling_version} | Picatinny: ${picatinny_version}"
 
 # -- Build new block content --------------------------------------------------
 new_block="<!-- compat-table-start -->
@@ -103,11 +97,13 @@ galaxio template init gatling/scala-sbt \\\\
   --set GatlingPicatinnyVersion=1.13.0
 \`\`\`
 
-The pack uses \`apiVersion: galaxio.io/v1\`, which requires **galaxio-cli \`>= ${min_cli_version}\`**.
+The pack uses \`apiVersion: galaxio.io/v1\`. Consult the
+[galaxio-cli releases](https://github.com/galax-io/galaxio-cli/releases) for the minimum
+compatible CLI version.
 
 ### Version table
 
-Pack \`${pack_version}\` · min CLI \`${min_cli_version}\` · Gatling \`${gatling_version}\` · Picatinny \`${picatinny_version}\`
+Pack \`${pack_version}\` · Gatling \`${gatling_version}\` · Picatinny \`${picatinny_version}\`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|

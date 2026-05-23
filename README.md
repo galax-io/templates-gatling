@@ -290,11 +290,13 @@ galaxio template init gatling/scala-sbt \
   --set GatlingPicatinnyVersion=1.13.0
 ```
 
-The pack uses `apiVersion: galaxio.io/v1`, which requires **galaxio-cli `>= 0.6.0`**.
+The pack uses `apiVersion: galaxio.io/v1`. Consult the
+[galaxio-cli releases](https://github.com/galax-io/galaxio-cli/releases) for the minimum
+compatible CLI version.
 
 ### Version table
 
-Pack `0.14.7` · min CLI `0.6.0` · Gatling `3.13.5` · Picatinny `1.12.0`
+Pack `0.14.7` · Gatling `3.13.5` · Picatinny `1.12.0`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|

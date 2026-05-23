@@ -2,56 +2,99 @@
 
 Gatling template pack for `galaxio-cli`.
 
-This repository contains Galaxio project templates for Gatling performance
-testing projects.
+## Quick Start
 
-## Pack
+```bash
+# 1. Install galaxio CLI
+curl -fsSL https://raw.githubusercontent.com/galax-io/galaxio-cli/main/scripts/install.sh | sh
 
-The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
+# 2. Scaffold a project
+galaxio template init gatling/scala-sbt --set Name=my-service -d ./perf-tests
 
-```yaml
-apiVersion: galaxio.io/v1
-kind: TemplatePack
-name: gatling
-version: 0.14.3
-description: Gatling performance testing templates
-templates:
-  - name: scala-sbt
-    version: 0.2.4
-    path: scala-sbt
-    description: Gatling Scala project with sbt
-  - name: java-maven
-    version: 0.2.5
-    path: java-maven
-    description: Gatling Java project with Maven
-  - name: kotlin-maven
-    version: 0.2.5
-    path: kotlin-maven
-    description: Gatling Kotlin project with Maven
-  - name: scala-gradle
-    version: 0.2.5
-    path: scala-gradle
-    description: Gatling Scala project with Gradle
-  - name: java-gradle
-    version: 0.2.5
-    path: java-gradle
-    description: Gatling Java project with Gradle
-  - name: kotlin-gradle
-    version: 0.2.5
-    path: kotlin-gradle
-    description: Gatling Kotlin project with Gradle
+# 3. Compile
+cd perf-tests && sbt -batch Gatling/compile
 ```
+
+Replace `scala-sbt` with any supported template — see [Templates](#templates) below.
 
 ## Templates
 
-| Name | Description |
-| --- | --- |
-| `scala-sbt` | Gatling Scala project with sbt |
-| `java-maven` | Gatling Java project with Maven |
-| `kotlin-maven` | Gatling Kotlin project with Maven |
-| `scala-gradle` | Gatling Scala project with Gradle |
-| `java-gradle` | Gatling Java project with Gradle |
-| `kotlin-gradle` | Gatling Kotlin project with Gradle |
+| Name | Language | Build tool |
+| --- | --- | --- |
+| `scala-sbt` | Scala | sbt |
+| `scala-gradle` | Scala | Gradle |
+| `java-maven` | Java | Maven |
+| `java-gradle` | Java | Gradle |
+| `kotlin-maven` | Kotlin | Maven |
+| `kotlin-gradle` | Kotlin | Gradle |
+
+All templates are ready-to-compile Gatling projects. Pick the one matching your
+language and build tool.
+
+## Inputs
+
+Each template accepts inputs via `--set Key=Value` or a `--values` YAML file.
+Unset inputs fall back to the defaults declared in the template manifest.
+
+### Common inputs (all templates)
+
+| Input | Default | Notes |
+| --- | --- | --- |
+| `Name` | `myservice` | Project name used in the README and build descriptor. |
+| `NameWord` | `myservice` | Name as a valid identifier — used in package/class names. Must not contain spaces or hyphens. |
+| `Package` | `org.galaxio.performance` | Base package for generated sources. |
+| `PackagePath` | `org/galaxio/performance` | `Package` with dots replaced by `/`. Must stay in sync — see note below. |
+| `GatlingVersion` | `3.13.5` | Gatling version injected into the build file. |
+| `GatlingPicatinnyVersion` | `1.12.0` | Gatling Picatinny plugin version. |
+| `BaseUrl` | `http://localhost` | Target base URL written to `simulation.conf`. |
+| `Intensity` | `60 rpm` | Default load intensity written to `simulation.conf`. |
+
+> **`Package` and `PackagePath` must stay in sync.**
+> Set both when overriding, or the generated sources will have mismatched
+> directory layout and package declarations and will not compile.
+>
+> ```bash
+> galaxio template init gatling/scala-sbt \
+>   --set Package=org.example.perf \
+>   --set PackagePath=org/example/perf
+> ```
+
+> **`Name` vs `NameWord`:** `Name` is a human-readable label (can contain
+> hyphens, spaces). `NameWord` is the sanitised identifier used in package and
+> class names — it must be a valid Java/Scala/Kotlin identifier. If `Name` is
+> `orders-api`, set `NameWord=ordersApi` (or `ordersapi`).
+>
+> ```bash
+> galaxio template init gatling/scala-sbt \
+>   --set Name=orders-api \
+>   --set NameWord=ordersApi
+> ```
+
+### Language and build-tool inputs
+
+These inputs exist only in the templates that use the corresponding language or
+build tool.
+
+| Input | Templates | Default |
+| --- | --- | --- |
+| `ScalaVersion` | `scala-sbt`, `scala-gradle` | `2.13.18` |
+| `SbtVersion` | `scala-sbt` | `1.12.2` |
+| `JavaVersion` | `java-*`, `kotlin-*`, `scala-gradle` | `17` |
+| `MavenVersion` | `java-maven`, `kotlin-maven` | `3.9.15` |
+| `KotlinVersion` | `kotlin-maven`, `kotlin-gradle` | `2.2.20` |
+
+Override at render time like any other input:
+
+```bash
+galaxio template init gatling/java-maven \
+  --set JavaVersion=21 \
+  --set MavenVersion=3.9.9 \
+  --set Name=orders-api \
+  --set NameWord=ordersApi \
+  --set Package=org.example.perf \
+  --set PackagePath=org/example/perf \
+  -d ./perf-tests
+```
 
 ## Optional Plugin Modules
 
@@ -69,29 +112,56 @@ Enable a plugin at render time:
 
 ```bash
 galaxio template init gatling/scala-sbt \
-  --set KafkaPluginEnabled=true
+  --set KafkaPluginEnabled=true \
+  --set Name=my-service \
+  --set NameWord=myservice \
+  -d ./perf-tests
 ```
 
-When enabled, the template:
-- adds plugin dependency to the build file
-- adds `kafkaUrl` / `dbUrl` / `amqpHost` etc. to `simulation.conf`
-- overlays `cases/KafkaActions` and `scenarios/KafkaScenario` source files
+Multiple plugins can be enabled simultaneously:
+
+```bash
+galaxio template init gatling/scala-sbt \
+  --set KafkaPluginEnabled=true \
+  --set JdbcPluginEnabled=true \
+  --set AmqpPluginEnabled=true \
+  --set Name=my-service \
+  --set NameWord=myservice \
+  -d ./perf-tests
+```
+
+When enabled, each plugin:
+- adds its dependency to the build file
+- adds connection parameters to `simulation.conf`
+- overlays ready-to-run `Actions` and `Scenario` source files
+
+### Plugin connection inputs
+
+| Input | Plugin | Default |
+| --- | --- | --- |
+| `KafkaUrl` | Kafka | `localhost:9092` |
+| `KafkaTopic` | Kafka | `myTopic` |
+| `DbUrl` | JDBC | `jdbc:postgresql://localhost:5432/postgres` |
+| `DbUser` | JDBC | `postgres` |
+| `DbPassword` | JDBC | `postgres` |
+| `AmqpHost` | AMQP | `localhost` |
+| `AmqpPort` | AMQP | `5672` |
+| `AmqpLogin` | AMQP | `guest` |
+| `AmqpPassword` | AMQP | `guest` |
+| `AmqpQueue` | AMQP | `my_queue` |
 
 ### Starter plugin defaults
 
-Generated projects intentionally use conservative starter defaults for optional
-JDBC and AMQP modules so first runs fail fast on unstable local infrastructure
-instead of stalling for a long time or over-allocating consumers.
+Generated projects use conservative defaults for JDBC and AMQP so first runs
+fail fast on missing infrastructure instead of hanging.
 
-- JDBC `connectionTimeout` defaults to `10 seconds`
-- AMQP `replyTimeout` defaults to `10 seconds`
-- AMQP `consumerThreadsCount` defaults to `1`
+- JDBC `connectionTimeout` — `10 seconds`
+- AMQP `replyTimeout` — `10 seconds`
+- AMQP `consumerThreadsCount` — `1`
 
-These are starter values, not production tuning guidance. If your environment
-is slower or you need more throughput, adjust the generated protocol builders in
-`Performance.*` after rendering the project.
+Adjust the generated protocol builders in `Performance.*` for production tuning.
 
-### Directory structure
+### Plugin directory structure
 
 ```text
 scala-sbt/
@@ -101,39 +171,14 @@ scala-sbt/
     src/test/scala/...
   plugins/
     kafka/                        # rendered when KafkaPluginEnabled=true
-      src/test/scala/.../cases/KafkaActions.scala
-      src/test/scala/.../scenarios/KafkaScenario.scala
     jdbc/                         # rendered when JdbcPluginEnabled=true
-      ...
     amqp/                         # rendered when AmqpPluginEnabled=true
-      ...
 ```
-
-## Scala sbt Inputs
-
-`scala-sbt` is a renderable Go-template based project. The template manifest is
-[`scala-sbt/galaxio-template.yaml`](scala-sbt/galaxio-template.yaml), and the
-project files live under [`scala-sbt/files`](scala-sbt/files).
-
-Useful inputs:
-
-| Input | Default |
-| --- | --- |
-| `Name` | `myservice` |
-| `NameWord` | `myservice` |
-| `Package` | `org.galaxio.performance` |
-| `PackagePath` | `org/galaxio/performance` |
-| `ScalaVersion` | `2.13.18` |
-| `GatlingVersion` | `3.13.5` |
-| `GatlingPicatinnyVersion` | `1.12.0` |
 
 ## Placeholder Syntax
 
-Template files are rendered with Go `text/template` syntax. Values come from the
-template manifest defaults, an optional `--values` YAML file, and `--set`
-overrides.
-
-Use placeholders as fields on the root data object:
+Template files use Go `text/template` syntax. Values are fields on the root
+data object:
 
 ```text
 {{ .Name }}
@@ -142,133 +187,85 @@ Use placeholders as fields on the root data object:
 {{ .NameWord }}
 ```
 
-Placeholders can be used in file contents and file paths:
+Placeholders work in file contents and file paths:
 
 ```text
-scala-sbt/files/build.sbt
 scala-sbt/files/src/test/scala/{{ .PackagePath }}/{{ .NameWord }}/Debug.scala
 ```
 
-For example, these values:
+Given:
 
 ```yaml
 Name: orders-api
-NameWord: ordersapi
+NameWord: ordersApi
 Package: org.example.performance
 PackagePath: org/example/performance
 ```
 
-render paths and Scala packages like:
+the rendered path becomes:
 
 ```text
-src/test/scala/org/example/performance/ordersapi/Debug.scala
-package org.example.performance.ordersapi
+src/test/scala/org/example/performance/ordersApi/Debug.scala
 ```
 
-CLI values override YAML values:
+Pass values via YAML file or inline `--set` flags. Inline `--set` overrides
+YAML:
 
 ```bash
 galaxio template init gatling/scala-sbt \
   --values .github/template-smoke-values.yaml \
-  --set Name=orders-api-set \
-  --set NameWord=ordersapiset
+  --set Name=orders-api \
+  --set NameWord=ordersApi
 ```
 
-## Developing Templates
+## Troubleshooting
 
-Each template lives in its own directory:
+### Compilation fails with `package does not exist` or `not found: object`
 
-```text
-scala-sbt/
-  galaxio-template.yaml
-  files/
-    build.sbt
-    src/test/scala/{{ .PackagePath }}/{{ .NameWord }}/Debug.scala
-  plugins/
-    kafka/
-    jdbc/
-    amqp/
-```
+`Package` and `PackagePath` are out of sync. The generated directory layout
+does not match the `package` declarations in source files.
 
-The pack manifest registers templates in [`galaxio-pack.yaml`](galaxio-pack.yaml).
-Renderable templates must define a `path` and contain a `galaxio-template.yaml`.
-Placeholder-only templates omit `path` and appear as coming soon in the CLI.
-
-Plugin overlay directories are declared in the template manifest:
-
-```yaml
-files:
-  - from: files
-    to: .
-  - from: plugins/kafka
-    to: .
-    if: '{{ .KafkaPluginEnabled }}'
-```
-
-For local development, create a temporary registry that points at this checkout:
+Fix: re-render with matching values:
 
 ```bash
-tmpdir="$(mktemp -d)"
-mkdir -p "$tmpdir/registry"
-cat > "$tmpdir/registry/galaxio-registry.yaml" <<YAML
-apiVersion: galaxio.io/v1
-kind: TemplateRegistry
-packs:
-  - name: gatling
-    source: local:$(pwd)
-YAML
-
-export GALAXIO_CONFIG="$tmpdir/galaxio-config.yaml"
-galaxio template configure --registry "local:$tmpdir/registry"
-galaxio template validate local:.
 galaxio template init gatling/scala-sbt \
-  --destination "$tmpdir/scala-sbt" \
-  --values .github/template-smoke-values.yaml
+  --set Package=org.example.perf \
+  --set PackagePath=org/example/perf \
+  --if-exists overwrite -d ./perf-tests
 ```
 
-After rendering, compile the generated project with its selected language and
-build tool:
+### Compilation fails with `not found: value <NameWord>` or invalid identifier error
+
+`NameWord` contains a character that is not valid in a package/class name
+(hyphen, space, dot). Set `NameWord` to a valid Java/Scala/Kotlin identifier.
+
+### Plugin dependency resolution fails
+
+The plugin version may not exist in the public repository or your corporate
+mirror is not proxying it. Override the version:
 
 ```bash
-cd "$tmpdir/scala-sbt"
-sbt -batch Gatling/compile
+--set KafkaPluginVersion=0.21.0
 ```
 
-When changing files under a renderable template directory, bump both:
-- top-level pack `version`
-- `templates[].version` for the changed template
+### Compile fails on a corporate network (artifact mirror)
 
-Versioning rule:
-- `fix`: patch bump, for example `0.2.0 -> 0.2.1`
-- `feat`: minor bump, for example `0.2.0 -> 0.3.0`
-- new renderable templates start from `0.1.0`
+The generated `build.sbt` / `pom.xml` / `build.gradle` uses public Maven
+Central. Configure your build tool to proxy through your corporate mirror after
+rendering.
 
-CI reads the latest commit subject and enforces `fix` vs `feat` bump policy for
-pack and changed templates independently. CI also verifies that the new pack
-version is not already tagged — preventing merges that reuse an existing version.
+### Template renders but `sbt` / `mvn` / `gradle` is not installed
 
-Run the versioning checker self-test locally with:
+Install the required build tool for your template before compiling. The CLI
+only renders files — it does not install build tooling.
 
-```bash
-bash .github/scripts/check-template-version-bump_test.sh
-```
+## Pack
 
-## Release
+The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 
-Releases are tag-driven. After merging changes to `main`:
-
-1. Push a tag matching the pack version: `git tag v0.14.3 && git push origin v0.14.3`
-2. The release workflow triggers automatically and creates a GitHub Release with auto-generated notes
-3. The workflow validates that the tag matches the `version` in `galaxio-pack.yaml`
-
-Registries point at the repository:
-
-```yaml
-source: github:galax-io/templates-gatling
-```
-
-The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows template
-`version` in `template list`.
+The CLI resolves the pack `version` field (e.g. `0.14.7`) to GitHub release tag
+`v0.14.7` and downloads the release archive at render time. The registry always
+points at the repository; the version pins which release is used.
 
 ## Compatibility
 
@@ -311,6 +308,107 @@ All templates share the same Gatling and Picatinny defaults; the script validate
 See [`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.
 <!-- compat-table-end -->
 
+## Developing Templates
+
+Each template lives in its own directory:
+
+```text
+scala-sbt/
+  galaxio-template.yaml
+  files/
+    build.sbt
+    src/test/scala/{{ .PackagePath }}/{{ .NameWord }}/Debug.scala
+  plugins/
+    kafka/
+    jdbc/
+    amqp/
+```
+
+The pack manifest registers templates in [`galaxio-pack.yaml`](galaxio-pack.yaml).
+Renderable templates must define a `path` and contain a `galaxio-template.yaml`.
+Placeholder-only templates omit `path` and appear as "coming soon" in the CLI.
+
+Plugin overlay directories are declared in the template manifest:
+
+```yaml
+files:
+  - from: files
+    to: .
+  - from: plugins/kafka
+    to: .
+    if: '{{ .KafkaPluginEnabled }}'
+```
+
+For local development, create a temporary registry pointing at this checkout:
+
+```bash
+tmpdir="$(mktemp -d)"
+mkdir -p "$tmpdir/registry"
+cat > "$tmpdir/registry/galaxio-registry.yaml" <<YAML
+apiVersion: galaxio.io/v1
+kind: TemplateRegistry
+packs:
+  - name: gatling
+    source: local:$(pwd)
+YAML
+
+export GALAXIO_CONFIG="$tmpdir/galaxio-config.yaml"
+galaxio template configure --registry "local:$tmpdir/registry"
+galaxio template validate local:.
+galaxio template init gatling/scala-sbt \
+  --destination "$tmpdir/scala-sbt" \
+  --values .github/template-smoke-values.yaml
+```
+
+After rendering, compile with the selected build tool:
+
+```bash
+cd "$tmpdir/scala-sbt"
+sbt -batch Gatling/compile
+```
+
+### Integration tests
+
+Integration tests for JDBC, AMQP, and Kafka plugins require Docker.
+CI runs them automatically. To run locally:
+
+```bash
+bash .github/scripts/run-integration-test.sh scala-sbt kafka
+bash .github/scripts/run-integration-test.sh scala-sbt jdbc
+bash .github/scripts/run-integration-test.sh scala-sbt amqp
+```
+
+Each script renders the template with the plugin enabled, starts the required
+Docker Compose stack, runs the Gatling scenario, and verifies output.
+
+### Versioning
+
+When changing files under a renderable template directory, bump both:
+- top-level pack `version`
+- `templates[].version` for the changed template
+
+Versioning rule:
+- `fix`: patch bump — `0.2.0 → 0.2.1`
+- `feat`: minor bump — `0.2.0 → 0.3.0`
+- new renderable templates start from `0.1.0`
+
+CI enforces `fix` vs `feat` bump policy and verifies that the new pack version
+is not already tagged.
+
+Run the versioning checker self-test locally:
+
+```bash
+bash .github/scripts/check-template-version-bump_test.sh
+```
+
+## Release
+
+Releases are tag-driven. After merging to `main`:
+
+1. Push a tag matching the pack version: `git tag v0.14.7 && git push origin v0.14.7`
+2. The release workflow creates a GitHub Release with auto-generated notes.
+3. The workflow validates that the tag matches `version` in `galaxio-pack.yaml`.
+
 ## Validation
 
 CI installs `galaxio`, validates the pack manifest, configures a local registry,
@@ -318,6 +416,6 @@ renders each template through `galaxio template init` with default values,
 checks placeholder substitution, and compiles the rendered project.
 
 When a template has `plugins/kafka/`, CI also renders with `KafkaPluginEnabled=true`,
-verifies that plugin source files are present (and absent in the default render),
-checks for the plugin dependency in the build file, and compiles the kafka-enabled
-project.
+verifies plugin source files are present (and absent in the default render),
+checks for the plugin dependency in the build file, and compiles the
+kafka-enabled project.

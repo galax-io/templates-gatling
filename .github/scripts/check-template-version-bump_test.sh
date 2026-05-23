@@ -222,6 +222,22 @@ test_pack_version_not_yet_tagged_passes() {
     run_check "$repo_dir" env SKIP_FETCH=1 BASE=main
 }
 
+test_ci_only_change_does_not_require_bump() {
+  local repo_dir
+  repo_dir="$(mktemp -d)"
+  trap 'rm -rf "$repo_dir"' RETURN
+  create_repo "$repo_dir"
+
+  mkdir -p "${repo_dir}/.github/workflows"
+  printf 'name: ci\n' > "${repo_dir}/.github/workflows/ci.yml"
+  git -C "$repo_dir" add .github
+  git -C "$repo_dir" commit -m "ci: update workflow" >/dev/null
+
+  assert_success \
+    "ci-only change (.github/** only) does not require version bump" \
+    run_check "$repo_dir" env SKIP_FETCH=1 BASE=main
+}
+
 test_fix_change_requires_pack_and_template_bump
 test_missing_template_bump_fails
 test_non_template_change_does_not_require_bump
@@ -229,6 +245,7 @@ test_new_renderable_template_must_start_at_010
 test_fix_change_requires_pack_bump
 test_pack_version_already_tagged_fails
 test_pack_version_not_yet_tagged_passes
+test_ci_only_change_does_not_require_bump
 
 if [[ "$failures" -ne 0 ]]; then
   printf '\n%d test(s) failed\n' "$failures"

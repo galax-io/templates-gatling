@@ -272,9 +272,44 @@ The CLI uses pack `version` to fetch GitHub tag/release. CLI still shows templat
 
 ## Compatibility
 
-`scala-sbt` template targets Picatinny `1.12.0` by default. That release includes
-`Utility.banner(injector)` and the current startup diagnostics/config flow used
-by the template.
+<!-- compat-table-start -->
+> **Auto-generated** — do not edit this block manually. Run `bash .github/scripts/update-readme-compat.sh` to refresh.
+
+### Render-time vs runtime versions
+
+**Pack version** (`0.14.7`) is render-time metadata: `galaxio-cli` resolves this
+version when you run `galaxio template init gatling/<template>` and downloads the matching pack
+from the registry.
+
+**Gatling** and **Picatinny** versions are *default runtime dependency values* injected into the
+generated project's build file. Override any of them at render time with `--set Flag=value`:
+
+```bash
+galaxio template init gatling/scala-sbt \
+  --set GatlingVersion=3.14.0 \
+  --set GatlingPicatinnyVersion=1.13.0
+```
+
+The pack uses `apiVersion: galaxio.io/v1`. Consult the
+[galaxio-cli releases](https://github.com/galax-io/galaxio-cli/releases) for the minimum
+compatible CLI version.
+
+### Version table
+
+Pack `0.14.7` · Gatling `3.13.5` · Picatinny `1.12.0`
+
+| Template | Language | Build tool | Template version | Gatling | Picatinny |
+|---|---|---|---|---|---|
+| `scala-sbt` | Scala | sbt | `0.2.8` | `3.13.5` | `1.12.0` |
+| `scala-gradle` | Scala | Gradle | `0.2.8` | `3.13.5` | `1.12.0` |
+| `java-maven` | Java | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
+| `java-gradle` | Java | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
+| `kotlin-maven` | Kotlin | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
+| `kotlin-gradle` | Kotlin | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
+
+All templates share the same Gatling and Picatinny defaults; the script validates this on every run.
+See [`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.
+<!-- compat-table-end -->
 
 ## Validation
 

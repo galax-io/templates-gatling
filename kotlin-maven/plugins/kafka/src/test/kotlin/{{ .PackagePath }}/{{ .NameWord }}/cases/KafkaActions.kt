@@ -7,6 +7,6 @@ import org.galaxio.gatling.javaapi.SimulationConfig.getStringParam
 
 object KafkaActions {
     val sendMessage: ChainBuilder = exec(
-        KafkaDsl.kafka("Kafka publish").send("myMessage", "Hello!")
+        KafkaDsl.kafka("Kafka publish").topic(getStringParam("kafkaTopic")).send("myMessage", "Hello!")
     )
 }

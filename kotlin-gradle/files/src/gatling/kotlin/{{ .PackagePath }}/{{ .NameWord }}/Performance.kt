@@ -26,7 +26,6 @@ object Performance {
 {{- if eq .KafkaPluginEnabled "true" }}
 
     val kafkaProtocol = KafkaDsl.kafka()
-        .topic(getStringParam("kafkaTopic"))
         .properties(
             mapOf(
                 ProducerConfig.ACKS_CONFIG to "1",

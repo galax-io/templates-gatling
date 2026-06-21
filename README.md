@@ -274,7 +274,7 @@ points at the repository; the version pins which release is used.
 
 ### Render-time vs runtime versions
 
-**Pack version** (`0.14.7`) is render-time metadata: `galaxio-cli` resolves this
+**Pack version** (`0.15.0`) is render-time metadata: `galaxio-cli` resolves this
 version when you run `galaxio template init gatling/<template>` and downloads the matching pack
 from the registry.
 
@@ -293,16 +293,16 @@ compatible CLI version.
 
 ### Version table
 
-Pack `0.14.7` · Gatling `3.13.5` · Picatinny `1.12.0`
+Pack `0.15.0` · Gatling `3.13.5` · Picatinny `1.17.1`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|
-| `scala-sbt` | Scala | sbt | `0.2.8` | `3.13.5` | `1.12.0` |
-| `scala-gradle` | Scala | Gradle | `0.2.8` | `3.13.5` | `1.12.0` |
-| `java-maven` | Java | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
-| `java-gradle` | Java | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
-| `kotlin-maven` | Kotlin | Maven | `0.2.9` | `3.13.5` | `1.12.0` |
-| `kotlin-gradle` | Kotlin | Gradle | `0.2.9` | `3.13.5` | `1.12.0` |
+| `scala-sbt` | Scala | sbt | `0.3.0` | `3.13.5` | `1.17.1` |
+| `scala-gradle` | Scala | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
+| `java-maven` | Java | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
+| `java-gradle` | Java | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
+| `kotlin-maven` | Kotlin | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
+| `kotlin-gradle` | Kotlin | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
 
 All templates share the same Gatling and Picatinny defaults; the script validates this on every run.
 See [`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.

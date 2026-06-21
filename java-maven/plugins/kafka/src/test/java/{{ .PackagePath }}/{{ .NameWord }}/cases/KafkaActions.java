@@ -9,7 +9,7 @@ import static org.galaxio.gatling.javaapi.SimulationConfig.getStringParam;
 public final class KafkaActions {
 
     public static final ChainBuilder sendMessage =
-            exec(KafkaDsl.kafka("Kafka publish").send("myMessage", "Hello!"));
+            exec(KafkaDsl.kafka("Kafka publish").topic(getStringParam("kafkaTopic")).send("myMessage", "Hello!"));
 
     private KafkaActions() {
     }

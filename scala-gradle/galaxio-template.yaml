@@ -33,16 +33,16 @@ inputs:
     default: "17"
   GradleWrapperVersion:
     type: string
-    default: 8.10.2
+    default: 8.14.5
   GatlingVersion:
     type: string
     default: 3.13.5
   GatlingGradlePluginVersion:
     type: string
-    default: 3.13.5
+    default: 3.13.5.4
   GatlingPicatinnyVersion:
     type: string
-    default: 1.12.0
+    default: 1.17.1
   BaseUrl:
     type: string
     default: http://localhost
@@ -78,10 +78,10 @@ inputs:
     default: "false"
   KafkaPluginVersion:
     type: string
-    default: 0.22.0
+    default: 1.0.5
   KafkaStreamsVersion:
     type: string
-    default: 7.9.5-ce
+    default: 7.9.8-ce
   KafkaTopic:
     type: string
     default: myTopic
@@ -93,10 +93,10 @@ inputs:
     default: "false"
   JdbcPluginVersion:
     type: string
-    default: 0.19.0
+    default: 1.0.3
   PostgresDriverVersion:
     type: string
-    default: 42.7.5
+    default: 42.7.7
   DbUrl:
     type: string
     default: jdbc:postgresql://localhost:5432/postgres
@@ -111,7 +111,7 @@ inputs:
     default: "false"
   AmqpPluginVersion:
     type: string
-    default: 1.2.0
+    default: 1.2.10
   AmqpHost:
     type: string
     default: localhost

@@ -7,6 +7,7 @@ import org.galaxio.gatling.config.SimulationConfig.getStringParam
 object KafkaActions {
   val sendMessage = exec(
     kafka("Kafka publish")
+      .topic(getStringParam("kafkaTopic"))
       .send[String, String]("myMessage", "Hello!"),
   )
 }

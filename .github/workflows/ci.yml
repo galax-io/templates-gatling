@@ -170,7 +170,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Clone galaxio-cli
-        run: git clone --depth 1 https://github.com/galax-io/galaxio-cli "${RUNNER_TEMP}/galaxio-cli"
+        run: git clone --depth 1 --branch v0.10.5 https://github.com/galax-io/galaxio-cli "${RUNNER_TEMP}/galaxio-cli"
 
       - name: Setup Go
         uses: actions/setup-go@v6

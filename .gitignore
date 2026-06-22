@@ -1,2 +1,6 @@
 .idea/
 *.iml
+
+# Generated per-template descriptor — source of truth is _common/galaxio-template.yaml
+*/galaxio-template.yaml
+!_common/galaxio-template.yaml

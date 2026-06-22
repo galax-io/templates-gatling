@@ -39,6 +39,7 @@ jobs:
             shared:
               - 'galaxio-pack.yaml'
               - 'README.md'
+              - '_common/**'
             scala_sbt:
               - 'scala-sbt/**'
             scala_gradle:
@@ -142,6 +143,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Copy shared template descriptor
+        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+
       - name: Test template version bump checker
         run: bash ./.github/scripts/check-template-version-bump_test.sh
 
@@ -211,6 +215,9 @@ jobs:
         run: |
           chmod +x "${RUNNER_TEMP}/galaxio-bin/galaxio"
           echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
+
+      - name: Copy shared template descriptor
+        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
 
       - name: Validate template pack
         run: galaxio template validate local:.
@@ -289,6 +296,9 @@ jobs:
         if: matrix.build_tool == 'sbt'
         uses: sbt/setup-sbt@v1
 
+      - name: Copy shared template descriptor
+        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+
       - name: Run template smoke test
         uses: ./.github/actions/template-smoke
         with:
@@ -360,6 +370,9 @@ jobs:
             ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-
             ${{ runner.os }}-sbt-integration-
             ${{ runner.os }}-sbt-
+
+      - name: Copy shared template descriptor
+        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
 
       - name: Start services and wait for health
         run: |

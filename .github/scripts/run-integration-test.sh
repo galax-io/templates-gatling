@@ -125,6 +125,11 @@ fi
 
 echo "Compilation succeeded."
 
+# -- Configure WireMock catch-all stub ------------------------------------
+curl -sf -X POST http://localhost:8080/__admin/mappings \
+  -H 'Content-Type: application/json' \
+  -d '{"request":{"method":"ANY","urlPattern":".*"},"response":{"status":200,"headers":{"Content-Type":"application/json"},"body":"{}"}}'
+
 # -- Pre-provision service resources --------------------------------------
 # Services are expected to be healthy already (docker compose up --wait).
 # Some plugins need resources (queues, topics) declared before the first

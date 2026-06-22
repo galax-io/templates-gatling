@@ -118,6 +118,16 @@ case "${template}" in
     ;;
 esac
 
+# Compile-only command per build tool. Used for the plugin render: smoke has no
+# Kafka/JDBC/AMQP services, so we only prove the plugin code compiles. Running
+# the (now asserted) Debug simulation against missing services is covered by the
+# integration job, which has real brokers.
+case "${build_tool}" in
+  sbt)    build_only_cmd="sbt -batch Gatling/compile" ;;
+  gradle) build_only_cmd="./gradlew --no-daemon gatlingClasses" ;;
+  maven)  build_only_cmd="./mvnw -q test-compile" ;;
+esac
+
 source_ext="${debug_file##*.}"
 kafka_actions_file="${source_root}/org/example/performance/ordersapi/cases/KafkaActions.${source_ext}"
 kafka_scenario_file="${source_root}/org/example/performance/ordersapi/scenarios/KafkaScenario.${source_ext}"
@@ -183,6 +193,14 @@ set +e
 compile_status=$?
 set -e
 
+# Regression guard: logback must not dump its own config status to the console.
+# (Protects the NopStatusListener fix; nested <if> in <root> would re-introduce it.)
+if grep -qE 'IfNestedWithinSecondPhaseElement|\|-WARN in |\|-INFO in ' "${compile_log}"; then
+  echo "FAIL: logback status noise present in ${template} run output" >&2
+  grep -nE 'IfNestedWithinSecondPhaseElement|\|-WARN in |\|-INFO in ' "${compile_log}" >&2
+  exit 1
+fi
+
 # -- plugin smoke (only when template ships plugin overlays) -----------
 kafka_compile_status=0
 if [[ -d "${plugin_source_dir}" ]]; then
@@ -212,7 +230,7 @@ if [[ -d "${plugin_source_dir}" ]]; then
   (
     cd "${kafka_dir}"
     set -o pipefail
-    eval "${compile_cmd}" 2>&1 | tee -a "${compile_log}"
+    eval "${build_only_cmd}" 2>&1 | tee -a "${compile_log}"
   )
   kafka_compile_status=$?
   set -e

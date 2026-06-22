@@ -40,5 +40,9 @@ class Debug extends Simulation {
     amqpProtocol,
 {{- end }}
   ).maxDuration(testDuration)
+    .assertions(
+      global.failedRequests.count.lte(0),
+      global.successfulRequests.count.gte(1),
+    )
 
 }

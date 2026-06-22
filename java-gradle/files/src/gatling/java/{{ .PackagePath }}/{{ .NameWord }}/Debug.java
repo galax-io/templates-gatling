@@ -14,6 +14,7 @@ import {{ .Package }}.{{ .NameWord }}.scenarios.AmqpScenario;
 {{- end }}
 
 import static io.gatling.javaapi.core.CoreDsl.atOnceUsers;
+import static io.gatling.javaapi.core.CoreDsl.global;
 import static org.galaxio.gatling.javaapi.SimulationConfig.testDuration;
 
 public class Debug extends Simulation {
@@ -48,6 +49,10 @@ public class Debug extends Simulation {
                 , Performance.amqpProtocol()
 {{- end }}
         )
-                .maxDuration(testDuration());
+                .maxDuration(testDuration())
+                .assertions(
+                        global().failedRequests().count().lte(0L),
+                        global().successfulRequests().count().gte(1L)
+                );
     }
 }

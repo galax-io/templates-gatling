@@ -34,7 +34,7 @@ jobs:
       - name: Detect changed paths
         id: filter
         if: github.event_name == 'pull_request'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             shared:
@@ -110,6 +110,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      ACTIONLINT_VERSION: v1.7.8
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -118,7 +120,14 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.24.x"
-          cache: true
+          cache: false
+
+      - name: Cache Go tools
+        uses: actions/cache@v5
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-tools-actionlint-${{ env.ACTIONLINT_VERSION }}
+          restore-keys: ${{ runner.os }}-go-tools-
 
       - name: Install shellcheck
         run: |
@@ -126,7 +135,7 @@ jobs:
           sudo apt-get install -y shellcheck
 
       - name: Install actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.8
+        run: go install "github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}"
 
       - name: Run shellcheck
         run: shellcheck .github/scripts/*.sh
@@ -169,31 +178,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Clone galaxio-cli
-        run: git clone --depth 1 --branch v0.10.5 https://github.com/galax-io/galaxio-cli "${RUNNER_TEMP}/galaxio-cli"
+      # Use actions/checkout (not raw git clone) to fetch the pinned galaxio-cli
+      # tag: it checks out tags cleanly (no "is not a commit" shallow-clone notice)
+      # and lands go.sum inside the workspace so setup-go can key its cache on it.
+      - name: Checkout galaxio-cli
+        uses: actions/checkout@v7
+        with:
+          repository: galax-io/galaxio-cli
+          ref: v0.10.5
+          path: galaxio-cli
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version: "1.25.x"
           cache: true
-          cache-dependency-path: ${{ runner.temp }}/galaxio-cli/go.sum
-
-      - name: Get go.sum hash for cache key
-        id: gosum
-        run: echo "hash=$(sha256sum "${RUNNER_TEMP}/galaxio-cli/go.sum" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Go build cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/go/build
-          key: ${{ runner.os }}-go-build-${{ steps.gosum.outputs.hash }}
-          restore-keys: ${{ runner.os }}-go-build-
+          cache-dependency-path: galaxio-cli/go.sum
 
       - name: Build galaxio binary
         run: |
           mkdir -p "${RUNNER_TEMP}/galaxio-bin"
-          cd "${RUNNER_TEMP}/galaxio-cli"
+          cd galaxio-cli
           go build -o "${RUNNER_TEMP}/galaxio-bin/galaxio" ./cmd/galaxio
 
       - name: Upload galaxio binary
@@ -215,7 +220,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download galaxio binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: galaxio-linux-amd64
           path: ${{ runner.temp }}/galaxio-bin
@@ -247,7 +252,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download galaxio binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: galaxio-linux-amd64
           path: ${{ runner.temp }}/galaxio-bin
@@ -301,6 +306,8 @@ jobs:
       - name: Setup sbt
         if: matrix.build_tool == 'sbt'
         uses: sbt/setup-sbt@v1
+        with:
+          disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
       - name: Run template smoke test
         uses: ./.github/actions/template-smoke
@@ -342,7 +349,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download galaxio binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: galaxio-linux-amd64
           path: ${{ runner.temp }}/galaxio-bin
@@ -360,6 +367,8 @@ jobs:
 
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
+        with:
+          disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
       - name: Cache sbt, ivy, and coursier
         uses: actions/cache@v5

@@ -1,6 +1,7 @@
 package {{ .Package }}.{{ .NameWord }}
 
 import io.gatling.javaapi.core.CoreDsl.atOnceUsers
+import io.gatling.javaapi.core.CoreDsl.global
 import io.gatling.javaapi.core.Simulation
 import org.galaxio.gatling.javaapi.SimulationConfig.testDuration
 import org.galaxio.gatling.javaapi.Utility
@@ -47,5 +48,9 @@ class Debug : Simulation() {
 {{- end }}
         )
             .maxDuration(testDuration())
+            .assertions(
+                global().failedRequests().count().lte(0L),
+                global().successfulRequests().count().gte(1L),
+            )
     }
 }

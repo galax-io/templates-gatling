@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!-- Discard logback's own config status output (nested <if> warnings). -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
     <if condition='property("CONSOLE_LOGGING").contains("ON")'>
         <then>
             <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">

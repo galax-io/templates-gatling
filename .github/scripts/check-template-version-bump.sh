@@ -117,13 +117,18 @@ done < <(
 )
 changed_any=0
 
+# The shared descriptor _common/galaxio-template.yaml is copied into every
+# template at build time, so a change there affects all templates and must
+# bump the pack version and each template version.
+common_changed="$(git diff --name-only "${base}"...HEAD -- _common/galaxio-template.yaml || true)"
+
 for template in "${templates[@]}"; do
   old_template_path="$(template_path_for "${template}" "${old_manifest}")"
   new_template_path="$(template_path_for "${template}" galaxio-pack.yaml)"
   template_path="${new_template_path:-${old_template_path:-${template}}}"
 
   changed_files="$(git diff --name-only "${base}"...HEAD -- "${template_path}" || true)"
-  if [[ -z "${changed_files}" ]]; then
+  if [[ -z "${changed_files}" && -z "${common_changed}" ]]; then
     continue
   fi
 

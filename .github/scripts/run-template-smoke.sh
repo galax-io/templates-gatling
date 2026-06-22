@@ -17,6 +17,9 @@ compile_log="${render_root}/compile.log"
 start_time="$(date +%s)"
 
 expected_picatinny_version="$(awk -F': ' '$1 == "GatlingPicatinnyVersion" { print $2 }' "${values_file}")"
+smoke_package="$(awk -F': ' '$1 == "Package" { print $2 }' "${values_file}")"
+smoke_name_word="$(awk -F': ' '$1 == "NameWord" { print $2 }' "${values_file}")"
+debug_simulation="${smoke_package}.${smoke_name_word}.Debug"
 
 case "${template}" in
   scala-sbt)
@@ -30,7 +33,7 @@ case "${template}" in
     picatinny_file="project/Dependencies.scala"
     picatinny_needle="gatling-picatinny\" % \"${expected_picatinny_version}\""
     wrapper_file=""
-    compile_cmd="sbt -batch Gatling/compile"
+    compile_cmd="sbt -batch \"Gatling/testOnly ${debug_simulation}\""
     override_name="orders-api-set"
     override_name_word="ordersapiset"
     ;;
@@ -45,7 +48,7 @@ case "${template}" in
     picatinny_file="build.gradle"
     picatinny_needle="gatling-picatinny_2.13:${expected_picatinny_version}"
     wrapper_file="gradlew"
-    compile_cmd="./gradlew --no-daemon gatlingClasses"
+    compile_cmd="./gradlew --no-daemon gatlingRun --simulation=${debug_simulation}"
     override_name="orders-api-gradle"
     override_name_word="ordersapigradle"
     ;;
@@ -60,7 +63,7 @@ case "${template}" in
     picatinny_file="pom.xml"
     picatinny_needle="<picatinny.version>${expected_picatinny_version}</picatinny.version>"
     wrapper_file="mvnw"
-    compile_cmd="./mvnw -q test-compile"
+    compile_cmd="./mvnw -q gatling:test -Dgatling.simulationClass=${debug_simulation}"
     override_name="orders-api-java-maven"
     override_name_word="ordersapijavamaven"
     ;;
@@ -75,7 +78,7 @@ case "${template}" in
     picatinny_file="pom.xml"
     picatinny_needle="<picatinny.version>${expected_picatinny_version}</picatinny.version>"
     wrapper_file="mvnw"
-    compile_cmd="./mvnw -q test-compile"
+    compile_cmd="./mvnw -q gatling:test -Dgatling.simulationClass=${debug_simulation}"
     override_name="orders-api-kotlin-maven"
     override_name_word="ordersapikotlinmaven"
     ;;
@@ -90,7 +93,7 @@ case "${template}" in
     picatinny_file="build.gradle"
     picatinny_needle="gatling-picatinny_2.13:${expected_picatinny_version}"
     wrapper_file="gradlew"
-    compile_cmd="./gradlew --no-daemon gatlingClasses"
+    compile_cmd="./gradlew --no-daemon gatlingRun --simulation=${debug_simulation}"
     override_name="orders-api-java-gradle"
     override_name_word="ordersapijavagradle"
     ;;
@@ -105,7 +108,7 @@ case "${template}" in
     picatinny_file="build.gradle.kts"
     picatinny_needle="gatling-picatinny_2.13:${expected_picatinny_version}"
     wrapper_file="gradlew"
-    compile_cmd="./gradlew --no-daemon gatlingClasses"
+    compile_cmd="./gradlew --no-daemon gatlingRun --simulation=${debug_simulation}"
     override_name="orders-api-kotlin-gradle"
     override_name_word="ordersapikotlingradle"
     ;;

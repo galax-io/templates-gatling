@@ -163,6 +163,17 @@ if [[ -n "${wrapper_file}" ]]; then
   chmod +x "${default_dir}/${wrapper_file}"
 fi
 
+# Start WireMock so Gatling requests succeed
+docker run -d --rm --name "smoke-wiremock-${template}" -p 8080:8080 wiremock/wiremock:3.10.0
+trap 'docker stop "smoke-wiremock-${template}" 2>/dev/null || true' EXIT
+
+until curl -sf http://localhost:8080/__admin/health >/dev/null 2>&1; do sleep 1; done
+
+# Catch-all stub: any request → 200 {}
+curl -sf -X POST http://localhost:8080/__admin/mappings \
+  -H 'Content-Type: application/json' \
+  -d '{"request":{"method":"ANY","urlPattern":".*"},"response":{"status":200,"headers":{"Content-Type":"application/json"},"body":"{}"}}'
+
 set +e
 (
   cd "${default_dir}"

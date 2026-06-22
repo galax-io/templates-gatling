@@ -7,9 +7,8 @@ CLI repo: https://github.com/galax-io/galaxio-cli (`cmd/galaxio/template.go` —
 ## Commands
 
 ```bash
-# Local setup: copy shared descriptor to each template dir, register local pack, render a project.
-bash .github/scripts/render-descriptors.sh
-galaxio template configure --registry "local:$(pwd)"   # once per working copy
+# Local setup: register local pack (once per working copy), render a project.
+galaxio template configure --registry "local:$(pwd)"
 galaxio template init "gatling/scala-sbt" --destination ./out \
   --values .github/template-smoke-values.yaml --set KafkaPluginEnabled=true
 

@@ -197,7 +197,7 @@ jobs:
           go build -o "${RUNNER_TEMP}/galaxio-bin/galaxio" ./cmd/galaxio
 
       - name: Upload galaxio binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: galaxio-linux-amd64
           path: ${{ runner.temp }}/galaxio-bin/galaxio
@@ -309,7 +309,7 @@ jobs:
 
       - name: Upload compile log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compile-log-${{ matrix.template }}
           path: ${{ runner.temp }}/rendered/${{ matrix.template }}/compile.log
@@ -317,7 +317,7 @@ jobs:
 
       - name: Upload rendered project on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rendered-${{ matrix.template }}
           path: ${{ runner.temp }}/rendered/${{ matrix.template }}
@@ -384,7 +384,7 @@ jobs:
 
       - name: Upload run log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-log-${{ matrix.plugin }}
           path: ${{ runner.temp }}/integration/${{ matrix.plugin }}/run.log

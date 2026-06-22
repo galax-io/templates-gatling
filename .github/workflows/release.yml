@@ -22,20 +22,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate tag matches pack version
+      - name: Validate tag source branch and pack version
+        id: prep
         run: |
           tag="${GITHUB_REF_NAME}"
+          git branch -r --contains "${tag}" | grep -qE 'origin/(release/|main$)' \
+            || { echo "::error::Tag ${tag} must be on main or a release/* branch"; exit 1; }
           version="${tag#v}"
           pack_version="$(awk '$1 == "version:" { print $2; exit }' galaxio-pack.yaml)"
           if [[ "${version}" != "${pack_version}" ]]; then
-            echo "Tag ${tag} does not match galaxio-pack.yaml version ${pack_version}" >&2
+            echo "::error::Tag ${tag} does not match galaxio-pack.yaml version ${pack_version}"
             exit 1
           fi
+          prev=$(git describe --tags --abbrev=0 --first-parent "${tag}^" --match 'v[0-9]*' 2>/dev/null || true)
+          echo "cliff_args=${prev:+${prev}..${tag}} --strip header" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate release notes
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: ${{ steps.prep.outputs.cliff_args }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
 
       - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          body: ${{ steps.changelog.outputs.content }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

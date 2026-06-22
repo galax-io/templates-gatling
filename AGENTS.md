@@ -25,15 +25,16 @@ docker compose -f .github/integration/docker-compose.yml up -d --wait
 bash .github/scripts/run-integration-test.sh kafka   # or: jdbc | amqp
 docker compose -f .github/integration/docker-compose.yml down
 
-# Release: v* tag triggers CI (validates tag == galaxio-pack.yaml version → GitHub release).
-# One release/X.x branch per major; tags cut from that branch. Never delete a released tag.
-# Minor/patch on existing major:
-git checkout release/0.x && git cherry-pick <sha>
+# Release: v* tag triggers CI — validates tag is on main or release/* branch,
+# tag == galaxio-pack.yaml version, then creates GitHub release.
+# One release/X.Y branch per minor (e.g. release/0.15). Never delete a released tag.
+# Patch on existing minor:
+git checkout release/0.15 && git cherry-pick <sha>
 # bump galaxio-pack.yaml version, then:
-git tag v0.15.0 && git push origin release/0.x v0.15.0
-# New major:
-git checkout -b release/1.x main && git push -u origin release/1.x
-git tag v1.0.0 && git push origin v1.0.0
+git tag v0.15.1 && git push origin release/0.15 v0.15.1
+# New minor/major — cut branch from main, tag:
+git checkout -b release/0.16 main && git push -u origin release/0.16
+git tag v0.16.0 && git push origin v0.16.0
 ```
 
 ## Boundaries

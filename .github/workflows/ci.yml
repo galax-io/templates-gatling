@@ -182,6 +182,17 @@ jobs:
           cache: true
           cache-dependency-path: ${{ runner.temp }}/galaxio-cli/go.sum
 
+      - name: Get go.sum hash for cache key
+        id: gosum
+        run: echo "hash=$(sha256sum "${RUNNER_TEMP}/galaxio-cli/go.sum" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Go build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go/build
+          key: ${{ runner.os }}-go-build-${{ steps.gosum.outputs.hash }}
+          restore-keys: ${{ runner.os }}-go-build-
+
       - name: Build galaxio binary
         run: |
           mkdir -p "${RUNNER_TEMP}/galaxio-bin"

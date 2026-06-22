@@ -145,7 +145,7 @@ jobs:
           fetch-depth: 0
 
       - name: Copy shared template descriptor
-        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+        run: bash .github/scripts/render-descriptors.sh
 
       - name: Test template version bump checker
         run: bash ./.github/scripts/check-template-version-bump_test.sh
@@ -218,7 +218,7 @@ jobs:
           echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
 
       - name: Copy shared template descriptor
-        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+        run: bash .github/scripts/render-descriptors.sh
 
       - name: Validate template pack
         run: galaxio template validate local:.
@@ -263,7 +263,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/pom.xml', matrix.template), format('{0}/files/.mvn/wrapper/maven-wrapper.properties', matrix.template)) }}
+          key: ${{ runner.os }}-maven-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', '_common/galaxio-template.yaml', format('{0}/files/pom.xml', matrix.template), format('{0}/files/.mvn/wrapper/maven-wrapper.properties', matrix.template)) }}
           restore-keys: |
             ${{ runner.os }}-maven-${{ matrix.template }}-
             ${{ runner.os }}-maven-
@@ -275,7 +275,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/build.gradle', matrix.template), format('{0}/files/build.gradle.kts', matrix.template), format('{0}/files/gradle/wrapper/gradle-wrapper.properties', matrix.template)) }}
+          key: ${{ runner.os }}-gradle-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', '_common/galaxio-template.yaml', format('{0}/files/build.gradle', matrix.template), format('{0}/files/build.gradle.kts', matrix.template), format('{0}/files/gradle/wrapper/gradle-wrapper.properties', matrix.template)) }}
           restore-keys: |
             ${{ runner.os }}-gradle-${{ matrix.template }}-
             ${{ runner.os }}-gradle-
@@ -288,7 +288,7 @@ jobs:
             ~/.cache/coursier
             ~/.ivy2/cache
             ~/.sbt
-          key: ${{ runner.os }}-sbt-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/**', matrix.template), format('{0}/project/**', matrix.template)) }}
+          key: ${{ runner.os }}-sbt-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', '_common/galaxio-template.yaml', format('{0}/files/**', matrix.template), format('{0}/project/**', matrix.template)) }}
           restore-keys: |
             ${{ runner.os }}-sbt-${{ matrix.template }}-
             ${{ runner.os }}-sbt-
@@ -298,7 +298,7 @@ jobs:
         uses: sbt/setup-sbt@v1
 
       - name: Copy shared template descriptor
-        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+        run: bash .github/scripts/render-descriptors.sh
 
       - name: Run template smoke test
         uses: ./.github/actions/template-smoke
@@ -366,14 +366,14 @@ jobs:
             ~/.cache/coursier
             ~/.ivy2/cache
             ~/.sbt
-          key: ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-${{ hashFiles('.github/template-smoke-values.yaml', 'scala-sbt/galaxio-template.yaml') }}
+          key: ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-${{ hashFiles('.github/template-smoke-values.yaml', '_common/galaxio-template.yaml') }}
           restore-keys: |
             ${{ runner.os }}-sbt-integration-${{ matrix.plugin }}-
             ${{ runner.os }}-sbt-integration-
             ${{ runner.os }}-sbt-
 
       - name: Copy shared template descriptor
-        run: for t in scala-sbt scala-gradle java-gradle java-maven kotlin-gradle kotlin-maven; do cp _common/galaxio-template.yaml "$t/galaxio-template.yaml"; done
+        run: bash .github/scripts/render-descriptors.sh
 
       - name: Start services and wait for health
         run: |

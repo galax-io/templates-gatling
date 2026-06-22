@@ -29,7 +29,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Detect changed paths
         id: filter
@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -140,7 +140,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -167,7 +167,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Clone galaxio-cli
         run: git clone --depth 1 https://github.com/galax-io/galaxio-cli "${RUNNER_TEMP}/galaxio-cli"
@@ -212,7 +212,7 @@ jobs:
       - versioning
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download galaxio binary
         uses: actions/download-artifact@v4
@@ -244,7 +244,7 @@ jobs:
     name: smoke-${{ matrix.template }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download galaxio binary
         uses: actions/download-artifact@v4
@@ -339,7 +339,7 @@ jobs:
           - plugin: kafka
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download galaxio binary
         uses: actions/download-artifact@v4

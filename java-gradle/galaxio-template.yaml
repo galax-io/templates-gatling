@@ -1,70 +1,50 @@
 apiVersion: galaxio.io/v1
 kind: Template
-name: gatling-template
-displayName: Gatling Template
-description: Shared template descriptor — copied to each template directory by CI.
+name: java-gradle
+displayName: Gatling Java gradle
+description: Gatling Java project with Gradle
 engine: go-template
 tags:
   - gatling
+  - java
+  - gradle
 inputs:
   Name:
     type: string
     default: myservice
-    description: Project name.
+    description: Project name used by Gradle and README.
   NameWord:
     type: string
     default: myservice
-    description: Project name formatted as a single package segment.
+    description: Project name formatted as a Java package segment.
   Package:
     type: string
     default: org.galaxio.performance
-    description: Package for generated Gatling sources.
+    description: Java package for generated Gatling sources.
   PackagePath:
     type: string
     default: org/galaxio/performance
     description: Filesystem path matching Package.
-  ScalaVersion:
-    type: string
-    default: 2.13.18
   JavaVersion:
     type: string
     default: "17"
     description: Java compiler release version.
-  KotlinVersion:
-    type: string
-    default: 2.4.0
-    description: Kotlin compiler version.
-  SbtVersion:
-    type: string
-    default: 1.12.13
-  GatlingVersion:
-    type: string
-    default: 3.13.5
-  SbtGatlingVersion:
-    type: string
-    default: 4.18.3
-  SbtScalafmtVersion:
-    type: string
-    default: 2.6.1
   GradleWrapperVersion:
     type: string
     default: 8.14.5
     description: Gradle distribution version for the Gradle Wrapper.
+  GatlingVersion:
+    type: string
+    default: 3.13.5
+    description: Gatling framework version.
   GatlingGradlePluginVersion:
     type: string
     default: 3.13.5.4
     description: Gatling Gradle plugin version.
-  MavenVersion:
-    type: string
-    default: 3.9.16
-    description: Apache Maven version for the Maven Wrapper.
-  GatlingMavenPluginVersion:
-    type: string
-    default: 4.16.3
-    description: Gatling Maven plugin version.
   GatlingPicatinnyVersion:
     type: string
     default: 1.17.1
+    description: Galaxio Gatling Picatinny library version.
   BaseUrl:
     type: string
     default: http://localhost

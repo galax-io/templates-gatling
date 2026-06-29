@@ -123,7 +123,7 @@ jobs:
           cache: false
 
       - name: Cache Go tools
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-tools-actionlint-${{ env.ACTIONLINT_VERSION }}
@@ -270,7 +270,7 @@ jobs:
 
       - name: Cache Maven repository
         if: matrix.build_tool == 'maven'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ matrix.template }}-${{ hashFiles('.github/template-smoke-values.yaml', format('{0}/galaxio-template.yaml', matrix.template), format('{0}/files/pom.xml', matrix.template), format('{0}/files/.mvn/wrapper/maven-wrapper.properties', matrix.template)) }}
@@ -280,7 +280,7 @@ jobs:
 
       - name: Cache Gradle
         if: matrix.build_tool == 'gradle'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
@@ -292,7 +292,7 @@ jobs:
 
       - name: Cache sbt, ivy, and coursier
         if: matrix.build_tool == 'sbt'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/coursier
@@ -371,7 +371,7 @@ jobs:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
       - name: Cache sbt, ivy, and coursier
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/coursier

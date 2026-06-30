@@ -30,10 +30,16 @@ fi
 # -- Extract pack-level values -----------------------------------------------
 pack_version=$(grep -m1 '^version:' "${pack_yaml}" | awk '{print $2}')
 
-# Template versions: find `- name: <template>` block, grab next `version:` line
+# Template versions: find the `- name: <template>` block and grab its `version:`.
+# Block-scoped (stops at the next `- name:`) and exact-field matched, so a missing
+# version line yields empty instead of bleeding into the next template's version.
 get_template_version() {
   local name="$1"
-  awk "/- name: ${name}/{found=1} found && /version:/{print \$2; exit}" "${pack_yaml}"
+  awk -v name="$name" '
+    $1 == "-" && $2 == "name:" && $3 == name { found = 1; next }
+    found && $1 == "-" && $2 == "name:" { exit }
+    found && $1 == "version:" { print $2; exit }
+  ' "${pack_yaml}"
 }
 
 scala_sbt_ver=$(get_template_version "scala-sbt")
@@ -46,7 +52,11 @@ kotlin_gradle_ver=$(get_template_version "kotlin-gradle")
 # -- Read + cross-validate Gatling/Picatinny defaults across all templates ----
 get_input_default() {
   local manifest="$1" key="$2"
-  awk "/^  ${key}:/{found=1} found && /default:/{print \$2; exit}" "${manifest}"
+  awk -v key="$key" '
+    $1 == key ":" { found = 1; next }
+    found && /^  [A-Za-z]/ { exit }
+    found && $1 == "default:" { print $2; exit }
+  ' "${manifest}"
 }
 
 templates="scala-sbt scala-gradle java-maven java-gradle kotlin-maven kotlin-gradle"
@@ -92,8 +102,8 @@ from the registry.
 generated project's build file. Override any of them at render time with \`--set Flag=value\`:
 
 \`\`\`bash
-galaxio template init gatling/scala-sbt \\\\
-  --set GatlingVersion=3.14.0 \\\\
+galaxio template init gatling/scala-sbt \\
+  --set GatlingVersion=3.14.0 \\
   --set GatlingPicatinnyVersion=1.13.0
 \`\`\`
 
@@ -119,18 +129,21 @@ See [\`galaxio-pack.yaml\`](galaxio-pack.yaml) for the authoritative template ve
 <!-- compat-table-end -->"
 
 # -- Replace block in README.md (python3 stdlib only) ------------------------
-python3 - "${readme}" <<PYEOF
-import re, sys
+# Pass the block via env (not interpolated into the Python source) and replace
+# with a lambda so the content is treated literally — no shell/Python injection
+# and no regex backslash/group expansion from version strings.
+NEW_BLOCK="${new_block}" python3 - "${readme}" <<'PYEOF'
+import os, re, sys
 
 readme_path = sys.argv[1]
 with open(readme_path) as f:
     content = f.read()
 
-new_block = """${new_block}"""
+new_block = os.environ["NEW_BLOCK"]
 
 updated, count = re.subn(
     r'<!-- compat-table-start -->.*?<!-- compat-table-end -->',
-    new_block,
+    lambda _match: new_block,
     content,
     flags=re.DOTALL,
 )

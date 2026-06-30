@@ -12,7 +12,6 @@ object Dependencies {
   lazy val kafkaPlugin: Seq[ModuleID] = Seq(
     "org.galaxio" %% "gatling-kafka-plugin" % "{{ .KafkaPluginVersion }}",
     "org.apache.kafka" % "kafka-streams" % "{{ .KafkaStreamsVersion }}",
-    "com.sksamuel.avro4s" %% "avro4s-core" % "4.1.2",
   )
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}

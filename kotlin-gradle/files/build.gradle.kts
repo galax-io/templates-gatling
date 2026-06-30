@@ -24,11 +24,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
 {{- if eq .KafkaPluginEnabled "true" }}
     maven("https://packages.confluent.io/maven/")
 {{- end }}
+    mavenLocal()
 }
 
 dependencies {

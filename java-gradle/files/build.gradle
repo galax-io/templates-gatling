@@ -22,11 +22,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 repositories {
-  mavenLocal()
   mavenCentral()
 {{- if eq .KafkaPluginEnabled "true" }}
   maven { url 'https://packages.confluent.io/maven/' }
 {{- end }}
+  mavenLocal()
 }
 
 dependencies {

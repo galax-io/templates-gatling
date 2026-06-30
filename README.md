@@ -45,7 +45,7 @@ Unset inputs fall back to the defaults declared in the template manifest.
 | `Package` | `org.galaxio.performance` | Base package for generated sources. |
 | `PackagePath` | `org/galaxio/performance` | `Package` with dots replaced by `/`. Must stay in sync — see note below. |
 | `GatlingVersion` | `3.13.5` | Gatling version injected into the build file. |
-| `GatlingPicatinnyVersion` | `1.12.0` | Gatling Picatinny plugin version. |
+| `GatlingPicatinnyVersion` | `1.17.1` | Gatling Picatinny plugin version. |
 | `BaseUrl` | `http://localhost` | Target base URL written to `simulation.conf`. |
 | `Intensity` | `60 rpm` | Default load intensity written to `simulation.conf`. |
 
@@ -78,10 +78,10 @@ build tool.
 | Input | Templates | Default |
 | --- | --- | --- |
 | `ScalaVersion` | `scala-sbt`, `scala-gradle` | `2.13.18` |
-| `SbtVersion` | `scala-sbt` | `1.12.2` |
+| `SbtVersion` | `scala-sbt` | `1.12.13` |
 | `JavaVersion` | `java-*`, `kotlin-*`, `scala-gradle` | `17` |
-| `MavenVersion` | `java-maven`, `kotlin-maven` | `3.9.15` |
-| `KotlinVersion` | `kotlin-maven`, `kotlin-gradle` | `2.2.20` |
+| `MavenVersion` | `java-maven`, `kotlin-maven` | `3.9.16` |
+| `KotlinVersion` | `kotlin-maven`, `kotlin-gradle` | `2.4.0` |
 
 Override at render time like any other input:
 
@@ -104,9 +104,9 @@ and are rendered only when the corresponding input is enabled.
 
 | Plugin | Enable input | Version input | Default |
 | --- | --- | --- | --- |
-| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `0.22.0` |
-| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `0.19.0` |
-| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `1.2.0` |
+| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.0.6` |
+| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `1.0.3` |
+| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `1.2.10` |
 
 Enable a plugin at render time:
 
@@ -263,8 +263,8 @@ only renders files — it does not install build tooling.
 
 The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 
-The CLI resolves the pack `version` field (e.g. `0.14.7`) to GitHub release tag
-`v0.14.7` and downloads the release archive at render time. The registry always
+The CLI resolves the pack `version` field (e.g. `0.15.1`) to GitHub release tag
+`v0.15.1` and downloads the release archive at render time. The registry always
 points at the repository; the version pins which release is used.
 
 ## Compatibility
@@ -274,7 +274,7 @@ points at the repository; the version pins which release is used.
 
 ### Render-time vs runtime versions
 
-**Pack version** (`0.15.0`) is render-time metadata: `galaxio-cli` resolves this
+**Pack version** (`0.15.1`) is render-time metadata: `galaxio-cli` resolves this
 version when you run `galaxio template init gatling/<template>` and downloads the matching pack
 from the registry.
 
@@ -293,16 +293,16 @@ compatible CLI version.
 
 ### Version table
 
-Pack `0.15.0` · Gatling `3.13.5` · Picatinny `1.17.1`
+Pack `0.15.1` · Gatling `3.13.5` · Picatinny `1.17.1`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|
-| `scala-sbt` | Scala | sbt | `0.3.0` | `3.13.5` | `1.17.1` |
-| `scala-gradle` | Scala | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
+| `scala-sbt` | Scala | sbt | `0.3.1` | `3.13.5` | `1.17.1` |
+| `scala-gradle` | Scala | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
 | `java-maven` | Java | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
-| `java-gradle` | Java | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
+| `java-gradle` | Java | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
 | `kotlin-maven` | Kotlin | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
-| `kotlin-gradle` | Kotlin | Gradle | `0.3.0` | `3.13.5` | `1.17.1` |
+| `kotlin-gradle` | Kotlin | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
 
 All templates share the same Gatling and Picatinny defaults; the script validates this on every run.
 See [`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.
@@ -373,9 +373,9 @@ Integration tests for JDBC, AMQP, and Kafka plugins require Docker.
 CI runs them automatically. To run locally:
 
 ```bash
-bash .github/scripts/run-integration-test.sh scala-sbt kafka
-bash .github/scripts/run-integration-test.sh scala-sbt jdbc
-bash .github/scripts/run-integration-test.sh scala-sbt amqp
+bash .github/scripts/run-integration-test.sh kafka
+bash .github/scripts/run-integration-test.sh jdbc
+bash .github/scripts/run-integration-test.sh amqp
 ```
 
 Each script renders the template with the plugin enabled, starts the required
@@ -405,7 +405,7 @@ bash .github/scripts/check-template-version-bump_test.sh
 
 Releases are tag-driven. After merging to `main`:
 
-1. Push a tag matching the pack version: `git tag v0.14.7 && git push origin v0.14.7`
+1. Push a tag matching the pack version: `git tag v0.15.1 && git push origin v0.15.1`
 2. The release workflow creates a GitHub Release with auto-generated notes.
 3. The workflow validates that the tag matches `version` in `galaxio-pack.yaml`.
 

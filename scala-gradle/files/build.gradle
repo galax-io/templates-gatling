@@ -29,11 +29,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 repositories {
-  mavenLocal()
   mavenCentral()
 {{- if eq .KafkaPluginEnabled "true" }}
   maven { url = uri('https://packages.confluent.io/maven/') }
 {{- end }}
+  mavenLocal()
 }
 
 dependencies {
@@ -41,7 +41,6 @@ dependencies {
 {{- if eq .KafkaPluginEnabled "true" }}
   gatling("org.galaxio:gatling-kafka-plugin_2.13:{{ .KafkaPluginVersion }}")
   gatling("org.apache.kafka:kafka-streams:{{ .KafkaStreamsVersion }}")
-  gatling("com.sksamuel.avro4s:avro4s-core_2.13:4.1.2")
 {{- end }}
 {{- if eq .JdbcPluginEnabled "true" }}
   gatling("org.galaxio:gatling-jdbc-plugin_2.13:{{ .JdbcPluginVersion }}")

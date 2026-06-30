@@ -48,10 +48,25 @@ is_minor_bump() {
   [[ "${new_major}" == "${old_major}" && "${new_minor}" -gt "${old_minor}" ]]
 }
 
+is_semver() {
+  [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
 ensure_policy_bump() {
   local label="$1"
   local old="$2"
   local new="$3"
+
+  # Reject non-numeric / prerelease versions up front with a clear message
+  # instead of letting the arithmetic `-gt` comparisons abort under `set -e`.
+  if ! is_semver "${new}"; then
+    echo "${label}: '${new}' is not a valid X.Y.Z version" >&2
+    exit 1
+  fi
+  if [[ -n "${old}" ]] && ! is_semver "${old}"; then
+    echo "${label}: previous value '${old}' is not a valid X.Y.Z version" >&2
+    exit 1
+  fi
 
   if [[ "${change_kind}" == "feat" ]]; then
     if ! is_minor_bump "${old}" "${new}"; then

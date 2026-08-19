@@ -34,7 +34,7 @@ jobs:
       - name: Detect changed paths
         id: filter
         if: github.event_name == 'pull_request'
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
             shared:
@@ -305,7 +305,7 @@ jobs:
 
       - name: Setup sbt
         if: matrix.build_tool == 'sbt'
-        uses: sbt/setup-sbt@9703aa88e68bfc4726d0fe119abcb17e7e6033de # v1.4.0
+        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
@@ -366,7 +366,7 @@ jobs:
           java-version: "21"
 
       - name: Setup sbt
-        uses: sbt/setup-sbt@9703aa88e68bfc4726d0fe119abcb17e7e6033de # v1.4.0
+        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 

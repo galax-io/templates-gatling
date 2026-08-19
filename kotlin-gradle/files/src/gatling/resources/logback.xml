@@ -39,6 +39,23 @@
         </then>
     </if>
 
+    <!-- Picatinny startup banner / diagnostics. Since picatinny 1.23.0 these are emitted
+         through SLF4J (logger org.galaxio.gatling.diagnostics) instead of stdout, so without
+         this binding the root level below would swallow them. The whole block arrives as one
+         log event: %msg%n prints it verbatim and keeps the ASCII box aligned, and
+         additivity="false" stops it also printing through the prefixed root appenders.
+         Toggle the output with picatinny.startup.banner.enabled / picatinny.diagnostics.enabled
+         in simulation.conf, not with this logger's level. -->
+    <appender name="BANNER" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
+        <appender-ref ref="BANNER"/>
+    </logger>
+
     <logger name="io.gatling.http.engine.response.DefaultStatsProcessor" level="WARN"/>
 
     <root level="${ROOT_LOGGING_LEVEL:-ERROR}">

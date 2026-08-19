@@ -38,6 +38,9 @@ Unset inputs fall back to the defaults declared in the template manifest.
 
 ### Common inputs (all templates)
 
+<!-- inputs-common-start -->
+> **Auto-generated** — do not edit this block manually. Run `bash .github/scripts/update-readme-compat.sh` to refresh.
+
 | Input | Default | Notes |
 | --- | --- | --- |
 | `Name` | `myservice` | Project name used in the README and build descriptor. |
@@ -45,9 +48,10 @@ Unset inputs fall back to the defaults declared in the template manifest.
 | `Package` | `org.galaxio.performance` | Base package for generated sources. |
 | `PackagePath` | `org/galaxio/performance` | `Package` with dots replaced by `/`. Must stay in sync — see note below. |
 | `GatlingVersion` | `3.13.5` | Gatling version injected into the build file. |
-| `GatlingPicatinnyVersion` | `1.17.1` | Gatling Picatinny plugin version. |
+| `GatlingPicatinnyVersion` | `1.25.0` | Galaxio Gatling Picatinny library version. |
 | `BaseUrl` | `http://localhost` | Target base URL written to `simulation.conf`. |
 | `Intensity` | `60 rpm` | Default load intensity written to `simulation.conf`. |
+<!-- inputs-common-end -->
 
 > **`Package` and `PackagePath` must stay in sync.**
 > Set both when overriding, or the generated sources will have mismatched
@@ -75,13 +79,25 @@ Unset inputs fall back to the defaults declared in the template manifest.
 These inputs exist only in the templates that use the corresponding language or
 build tool.
 
+<!-- inputs-langtool-start -->
+> **Auto-generated** — do not edit this block manually. Run `bash .github/scripts/update-readme-compat.sh` to refresh.
+
 | Input | Templates | Default |
 | --- | --- | --- |
 | `ScalaVersion` | `scala-sbt`, `scala-gradle` | `2.13.18` |
-| `SbtVersion` | `scala-sbt` | `1.12.13` |
 | `JavaVersion` | `java-*`, `kotlin-*`, `scala-gradle` | `17` |
+| `KotlinVersion` | `kotlin-maven`, `kotlin-gradle` | `2.4.10` |
+| `SbtVersion` | `scala-sbt` | `1.12.15` |
 | `MavenVersion` | `java-maven`, `kotlin-maven` | `3.9.16` |
-| `KotlinVersion` | `kotlin-maven`, `kotlin-gradle` | `2.4.0` |
+| `GradleWrapperVersion` | `*-gradle` | `8.14.5` |
+| `SbtGatlingVersion` | `scala-sbt` | `4.19.1` |
+| `SbtScalafmtVersion` | `scala-sbt` | `2.6.2` |
+| `GatlingMavenPluginVersion` | `java-maven`, `kotlin-maven` | `4.21.10` |
+| `GatlingGradlePluginVersion` | `*-gradle` | `3.13.5.4` |
+
+`GatlingGradlePluginVersion` tracks the Gatling version it supports, so it stays on the
+`3.13.5.x` line for as long as `GatlingVersion` is `3.13.5`.
+<!-- inputs-langtool-end -->
 
 Override at render time like any other input:
 
@@ -102,11 +118,30 @@ Each template supports optional Kafka, JDBC, and AMQP plugin modules via
 conditional overlay directories. Plugin files live under `plugins/<name>/`
 and are rendered only when the corresponding input is enabled.
 
+<!-- inputs-plugins-start -->
+> **Auto-generated** — do not edit this block manually. Run `bash .github/scripts/update-readme-compat.sh` to refresh.
+
 | Plugin | Enable input | Version input | Default |
 | --- | --- | --- | --- |
-| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.0.6` |
-| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `1.0.3` |
-| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `1.2.10` |
+| Kafka | `KafkaPluginEnabled` | `KafkaPluginVersion` | `1.3.0` |
+| JDBC | `JdbcPluginEnabled` | `JdbcPluginVersion` | `1.5.0` |
+| AMQP | `AmqpPluginEnabled` | `AmqpPluginVersion` | `1.3.0` |
+
+The JDBC overlay also pulls the PostgreSQL driver, pinned by `PostgresDriverVersion`
+(`42.7.13`), and the Kafka overlay pins `org.apache.kafka:kafka-streams` with
+`KafkaStreamsVersion` (`3.9.2`) — see the note below.
+<!-- inputs-plugins-end -->
+
+> **Kafka and the Confluent repository.** From `gatling-kafka-plugin` 1.3.0 the plugin
+> resolves `kafka-clients` and `kafka-streams-scala` from Maven Central, so the Kafka overlay
+> pins `org.apache.kafka:kafka-streams` with Apache coordinates; `KafkaStreamsVersion` defaults
+> to the version the plugin already pulls, and overriding it holds Kafka Streams at your value.
+> The `packages.confluent.io` repository is still declared, because it is required
+> when you pin `KafkaPluginVersion` below 1.3.0 — those releases inherit Confluent-only
+> artifacts — and for Schema-Registry-backed Avro, which additionally needs
+> `io.confluent:kafka-avro-serializer` and `io.confluent:kafka-streams-avro-serde` declared
+> by hand (with the `org.apache.kafka:kafka-clients` exclusion); see the
+> [plugin README](https://github.com/galax-io/gatling-kafka-plugin#optional-avro-via-confluent-schema-registry).
 
 Enable a plugin at render time:
 
@@ -263,8 +298,8 @@ only renders files — it does not install build tooling.
 
 The pack manifest is [`galaxio-pack.yaml`](galaxio-pack.yaml).
 
-The CLI resolves the pack `version` field (e.g. `0.15.1`) to GitHub release tag
-`v0.15.1` and downloads the release archive at render time. The registry always
+The CLI resolves the pack `version` field (e.g. `0.16.0`) to GitHub release tag
+`v0.16.0` and downloads the release archive at render time. The registry always
 points at the repository; the version pins which release is used.
 
 ## Compatibility
@@ -274,7 +309,7 @@ points at the repository; the version pins which release is used.
 
 ### Render-time vs runtime versions
 
-**Pack version** (`0.15.1`) is render-time metadata: `galaxio-cli` resolves this
+**Pack version** (`0.16.0`) is render-time metadata: `galaxio-cli` resolves this
 version when you run `galaxio template init gatling/<template>` and downloads the matching pack
 from the registry.
 
@@ -293,16 +328,16 @@ compatible CLI version.
 
 ### Version table
 
-Pack `0.15.1` · Gatling `3.13.5` · Picatinny `1.17.1`
+Pack `0.16.0` · Gatling `3.13.5` · Picatinny `1.25.0`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|
-| `scala-sbt` | Scala | sbt | `0.3.1` | `3.13.5` | `1.17.1` |
-| `scala-gradle` | Scala | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
-| `java-maven` | Java | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
-| `java-gradle` | Java | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
-| `kotlin-maven` | Kotlin | Maven | `0.3.0` | `3.13.5` | `1.17.1` |
-| `kotlin-gradle` | Kotlin | Gradle | `0.3.1` | `3.13.5` | `1.17.1` |
+| `scala-sbt` | Scala | sbt | `0.4.0` | `3.13.5` | `1.25.0` |
+| `scala-gradle` | Scala | Gradle | `0.4.0` | `3.13.5` | `1.25.0` |
+| `java-maven` | Java | Maven | `0.4.0` | `3.13.5` | `1.25.0` |
+| `java-gradle` | Java | Gradle | `0.4.0` | `3.13.5` | `1.25.0` |
+| `kotlin-maven` | Kotlin | Maven | `0.4.0` | `3.13.5` | `1.25.0` |
+| `kotlin-gradle` | Kotlin | Gradle | `0.4.0` | `3.13.5` | `1.25.0` |
 
 All templates share the same Gatling and Picatinny defaults; the script validates this on every run.
 See [`galaxio-pack.yaml`](galaxio-pack.yaml) for the authoritative template version list.
@@ -373,9 +408,9 @@ Integration tests for JDBC, AMQP, and Kafka plugins require Docker.
 CI runs them automatically. To run locally:
 
 ```bash
-bash .github/scripts/run-integration-test.sh kafka
-bash .github/scripts/run-integration-test.sh jdbc
-bash .github/scripts/run-integration-test.sh amqp
+bash .github/scripts/run-integration-test.sh scala-sbt kafka
+bash .github/scripts/run-integration-test.sh scala-sbt jdbc
+bash .github/scripts/run-integration-test.sh scala-sbt amqp
 ```
 
 Each script renders the template with the plugin enabled, starts the required
@@ -405,7 +440,7 @@ bash .github/scripts/check-template-version-bump_test.sh
 
 Releases are tag-driven. After merging to `main`:
 
-1. Push a tag matching the pack version: `git tag v0.15.1 && git push origin v0.15.1`
+1. Push a tag matching the pack version: `git tag v0.16.0 && git push origin v0.16.0`
 2. The release workflow creates a GitHub Release with auto-generated notes.
 3. The workflow validates that the tag matches `version` in `galaxio-pack.yaml`.
 

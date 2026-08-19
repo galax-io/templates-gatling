@@ -31,7 +31,7 @@ inputs:
     description: Java compiler release version.
   KotlinVersion:
     type: string
-    default: 2.4.0
+    default: 2.4.10
     description: Kotlin compiler version.
   GradleWrapperVersion:
     type: string
@@ -47,7 +47,7 @@ inputs:
     description: Gatling Gradle plugin version.
   GatlingPicatinnyVersion:
     type: string
-    default: 1.17.1
+    default: 1.25.0
     description: Galaxio Gatling Picatinny library version.
   BaseUrl:
     type: string
@@ -84,10 +84,16 @@ inputs:
     default: "false"
   KafkaPluginVersion:
     type: string
-    default: 1.0.6
+    default: 1.3.0
   KafkaStreamsVersion:
     type: string
-    default: 7.9.8-ce
+    default: 3.9.2
+    description: >-
+      Pins org.apache.kafka:kafka-streams in the Kafka overlay. The default matches the
+      version gatling-kafka-plugin 1.3.0 already pulls through kafka-streams-scala, so
+      leaving it alone changes nothing; override it to hold Kafka Streams at a different
+      version. Apache coordinates resolve from Maven Central (a -ce build would also
+      need the Confluent repository).
   KafkaTopic:
     type: string
     default: myTopic
@@ -99,10 +105,10 @@ inputs:
     default: "false"
   JdbcPluginVersion:
     type: string
-    default: 1.0.3
+    default: 1.5.0
   PostgresDriverVersion:
     type: string
-    default: 42.7.7
+    default: 42.7.13
   DbUrl:
     type: string
     default: jdbc:postgresql://localhost:5432/postgres
@@ -117,7 +123,7 @@ inputs:
     default: "false"
   AmqpPluginVersion:
     type: string
-    default: 1.2.10
+    default: 1.3.0
   AmqpHost:
     type: string
     default: localhost

@@ -25,6 +25,7 @@ case "${template}" in
   scala-sbt)
     build_tool="sbt"
     source_root="src/test/scala"
+    logback_file="src/test/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.scala"
     override_debug_file="${source_root}/org/example/performance/ordersapiset/Debug.scala"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.scala"
@@ -40,6 +41,7 @@ case "${template}" in
   scala-gradle)
     build_tool="gradle"
     source_root="src/gatling/scala"
+    logback_file="src/gatling/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.scala"
     override_debug_file="${source_root}/org/example/performance/ordersapigradle/Debug.scala"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.scala"
@@ -55,6 +57,7 @@ case "${template}" in
   java-maven)
     build_tool="maven"
     source_root="src/test/java"
+    logback_file="src/test/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.java"
     override_debug_file="${source_root}/org/example/performance/ordersapijavamaven/Debug.java"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.java"
@@ -70,6 +73,7 @@ case "${template}" in
   kotlin-maven)
     build_tool="maven"
     source_root="src/test/kotlin"
+    logback_file="src/test/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.kt"
     override_debug_file="${source_root}/org/example/performance/ordersapikotlinmaven/Debug.kt"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.kt"
@@ -85,6 +89,7 @@ case "${template}" in
   java-gradle)
     build_tool="gradle"
     source_root="src/gatling/java"
+    logback_file="src/gatling/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.java"
     override_debug_file="${source_root}/org/example/performance/ordersapijavagradle/Debug.java"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.java"
@@ -100,6 +105,7 @@ case "${template}" in
   kotlin-gradle)
     build_tool="gradle"
     source_root="src/gatling/kotlin"
+    logback_file="src/gatling/resources/logback.xml"
     debug_file="${source_root}/org/example/performance/ordersapi/Debug.kt"
     override_debug_file="${source_root}/org/example/performance/ordersapikotlingradle/Debug.kt"
     stability_file="${source_root}/org/example/performance/ordersapi/Stability.kt"
@@ -167,6 +173,17 @@ grep -R "org.example.performance" "${default_dir}/${source_root}" >/dev/null
 grep -R "${picatinny_needle}" "${default_dir}/${picatinny_file}" >/dev/null
 grep -R "Utility.banner(" "${default_dir}/${stability_file}" >/dev/null
 grep -R "Utility.banner(" "${default_dir}/${max_performance_file}" >/dev/null
+
+# Regression guard: since picatinny 1.23.0 the startup banner and diagnostics are emitted
+# through SLF4J (logger org.galaxio.gatling.diagnostics) instead of stdout, and the library
+# ships no logback.xml of its own. Without this binding in the generated logback.xml the root
+# level swallows both and the simulations above print nothing — silently, with a green build.
+test -f "${default_dir}/${logback_file}"
+if ! grep -q 'name="org.galaxio.gatling.diagnostics"' "${default_dir}/${logback_file}"; then
+  echo "FAIL: ${template} logback.xml does not bind org.galaxio.gatling.diagnostics;" >&2
+  echo "      picatinny >= 1.23.0 would emit the startup banner into the void." >&2
+  exit 1
+fi
 
 if [[ -n "${wrapper_file}" ]]; then
   test -f "${default_dir}/${wrapper_file}"

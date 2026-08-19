@@ -10,9 +10,10 @@
 #   */galaxio-template.yaml   — input defaults. Inputs declared by every template
 #                               (Gatling, Picatinny, the three plugin versions,
 #                               PostgresDriver, KafkaStreams) must agree across all
-#                               six; the script fails on divergence. Inputs specific
-#                               to one language or build tool are read from a
-#                               template that declares them.
+#                               six; the script fails on divergence. Inputs specific to
+#                               one language or build tool are cross-checked across every
+#                               template that declares them, so a row can never state a
+#                               value only one of them uses.
 #
 # Replaces each block between <!-- <name>-start --> and <!-- <name>-end --> for
 # every name in `blocks` below:
@@ -62,32 +63,50 @@ kotlin_maven_ver=$(get_template_version "kotlin-maven")
 kotlin_gradle_ver=$(get_template_version "kotlin-gradle")
 
 # -- Read input defaults out of the template manifests ------------------------
-# Prints everything after `default:` for the given input, minus surrounding
-# quotes. Multi-word values ("60 rpm") and quoted ones ("17") both come back
-# intact, so the generated tables match the manifests exactly.
+# Each manifest is parsed exactly ONCE by awk into a "<key>\t<default>" blob held
+# in a shell variable; every lookup below is pure bash and spawns no process.
+# Keys are matched on fields, not whole lines, so trailing whitespace or a
+# trailing comment on an input key does not make the input read as missing.
+# Multi-word values ("60 rpm") and quoted ones ("17") come back intact.
+templates=(scala-sbt scala-gradle java-maven java-gradle kotlin-maven kotlin-gradle)
+
+for tmpl in "${templates[@]}"; do
+  printf -v "cache_${tmpl//-/_}" '%s' "$(
+    awk '
+      # A two-space-indented "Key:" starts a new input.
+      /^  [A-Za-z]/ && $1 ~ /:$/ { key = substr($1, 1, length($1) - 1); next }
+      key != "" && $1 == "default:" {
+        value = $0
+        sub(/^[[:space:]]*default:[[:space:]]*/, "", value)
+        sub(/[[:space:]]+$/, "", value)
+        sub(/^["'"'"']/, "", value)
+        sub(/["'"'"']$/, "", value)
+        print key "\t" value
+        key = ""
+      }
+    ' "${repo_root}/${tmpl}/galaxio-template.yaml"
+  )"
+done
+
 get_input_default() {
-  local manifest="$1" key="$2"
-  awk -v key="  ${key}:" '
-    $0 == key { found = 1; next }
-    found && /^    default:/ {
-      sub(/^[[:space:]]*default:[[:space:]]*/, "")
-      sub(/^["'"'"']/, "")
-      sub(/["'"'"']$/, "")
-      print
-      exit
-    }
-    found && /^  [A-Za-z]/ { exit }   # next input began without a default
-  ' "${manifest}"
+  local cache_var="cache_${1//-/_}" wanted="$2" key value
+  while IFS=$'\t' read -r key value; do
+    if [[ "${key}" == "${wanted}" ]]; then
+      printf '%s' "${value}"
+      return 0
+    fi
+  done <<< "${!cache_var}"
 }
 
-templates="scala-sbt scala-gradle java-maven java-gradle kotlin-maven kotlin-gradle"
-
-# Inputs every template declares and must agree on. Divergence is an error:
-# the tables below render one value for all six.
-uniform_default() {
-  local key="$1" ref="" val="" tmpl=""
-  for tmpl in ${templates}; do
-    val="$(get_input_default "${repo_root}/${tmpl}/galaxio-template.yaml" "${key}")"
+# Reads one input across every template that declares it and requires them to
+# agree. Reports ALL diverging templates before failing, so one run shows every
+# manifest that needs fixing. Used for single-template inputs too, where it
+# degenerates to a presence check.
+agreed_default() {
+  local key="$1"; shift
+  local ref="" val="" tmpl="" diverged=""
+  for tmpl in "$@"; do
+    val="$(get_input_default "${tmpl}" "${key}")"
     if [[ -z "${val}" ]]; then
       echo "ERROR: ${tmpl} declares no default for ${key}." >&2
       return 1
@@ -95,49 +114,69 @@ uniform_default() {
     if [[ -z "${ref}" ]]; then
       ref="${val}"
     elif [[ "${val}" != "${ref}" ]]; then
-      echo "ERROR: ${key} diverges across templates: ${tmpl}=${val}, expected ${ref}." >&2
-      echo "       Fix the manifests, or teach this script to render per-template values." >&2
-      return 1
+      diverged="${diverged}       ${tmpl} = ${val}"$'\n'
     fi
   done
+  if [[ -n "${diverged}" ]]; then
+    echo "ERROR: ${key} diverges across templates (expected ${ref} everywhere):" >&2
+    printf '%s' "${diverged}" >&2
+    echo "       Fix the manifests, or teach this script to render per-template values." >&2
+    return 1
+  fi
   printf '%s' "${ref}"
 }
 
-# Inputs only some templates declare — read from one that has it.
-template_default() {
-  get_input_default "${repo_root}/${1}/galaxio-template.yaml" "$2"
-}
+# Which templates declare each input. Every template listed in a row's
+# "Templates" column must appear here, or that row can state a value only one of
+# them actually uses.
+all_templates=("${templates[@]}")
+scala_templates=(scala-sbt scala-gradle)
+kotlin_templates=(kotlin-maven kotlin-gradle)
+maven_templates=(java-maven kotlin-maven)
+gradle_templates=(scala-gradle java-gradle kotlin-gradle)
+java_templates=(scala-gradle java-maven java-gradle kotlin-maven kotlin-gradle)
+sbt_templates=(scala-sbt)
 
-gatling_version="$(uniform_default GatlingVersion)"
-picatinny_version="$(uniform_default GatlingPicatinnyVersion)"
-kafka_plugin_version="$(uniform_default KafkaPluginVersion)"
-kafka_streams_version="$(uniform_default KafkaStreamsVersion)"
-jdbc_plugin_version="$(uniform_default JdbcPluginVersion)"
-amqp_plugin_version="$(uniform_default AmqpPluginVersion)"
-postgres_driver_version="$(uniform_default PostgresDriverVersion)"
+gatling_version="$(agreed_default GatlingVersion "${all_templates[@]}")"
+picatinny_version="$(agreed_default GatlingPicatinnyVersion "${all_templates[@]}")"
+kafka_plugin_version="$(agreed_default KafkaPluginVersion "${all_templates[@]}")"
+kafka_streams_version="$(agreed_default KafkaStreamsVersion "${all_templates[@]}")"
+jdbc_plugin_version="$(agreed_default JdbcPluginVersion "${all_templates[@]}")"
+amqp_plugin_version="$(agreed_default AmqpPluginVersion "${all_templates[@]}")"
+postgres_driver_version="$(agreed_default PostgresDriverVersion "${all_templates[@]}")"
 
-name_default="$(template_default scala-sbt Name)"
-name_word_default="$(template_default scala-sbt NameWord)"
-package_default="$(template_default scala-sbt Package)"
-package_path_default="$(template_default scala-sbt PackagePath)"
-base_url_default="$(template_default scala-sbt BaseUrl)"
-intensity_default="$(template_default scala-sbt Intensity)"
+name_default="$(agreed_default Name "${all_templates[@]}")"
+name_word_default="$(agreed_default NameWord "${all_templates[@]}")"
+package_default="$(agreed_default Package "${all_templates[@]}")"
+package_path_default="$(agreed_default PackagePath "${all_templates[@]}")"
+base_url_default="$(agreed_default BaseUrl "${all_templates[@]}")"
+intensity_default="$(agreed_default Intensity "${all_templates[@]}")"
 
-scala_version="$(template_default scala-sbt ScalaVersion)"
-sbt_version="$(template_default scala-sbt SbtVersion)"
-sbt_gatling_version="$(template_default scala-sbt SbtGatlingVersion)"
-sbt_scalafmt_version="$(template_default scala-sbt SbtScalafmtVersion)"
-java_version="$(template_default java-gradle JavaVersion)"
-maven_version="$(template_default java-maven MavenVersion)"
-kotlin_version="$(template_default kotlin-maven KotlinVersion)"
-gradle_wrapper_version="$(template_default java-gradle GradleWrapperVersion)"
-gatling_gradle_plugin_version="$(template_default java-gradle GatlingGradlePluginVersion)"
-gatling_maven_plugin_version="$(template_default java-maven GatlingMavenPluginVersion)"
+scala_version="$(agreed_default ScalaVersion "${scala_templates[@]}")"
+sbt_version="$(agreed_default SbtVersion "${sbt_templates[@]}")"
+sbt_gatling_version="$(agreed_default SbtGatlingVersion "${sbt_templates[@]}")"
+sbt_scalafmt_version="$(agreed_default SbtScalafmtVersion "${sbt_templates[@]}")"
+java_version="$(agreed_default JavaVersion "${java_templates[@]}")"
+maven_version="$(agreed_default MavenVersion "${maven_templates[@]}")"
+kotlin_version="$(agreed_default KotlinVersion "${kotlin_templates[@]}")"
+gradle_wrapper_version="$(agreed_default GradleWrapperVersion "${gradle_templates[@]}")"
+gatling_gradle_plugin_version="$(agreed_default GatlingGradlePluginVersion "${gradle_templates[@]}")"
+gatling_maven_plugin_version="$(agreed_default GatlingMavenPluginVersion "${maven_templates[@]}")"
+
+# The langtool block states that GatlingGradlePluginVersion tracks the Gatling
+# version. Enforce it here so that sentence cannot become a lie.
+if [[ "${gatling_gradle_plugin_version}" != "${gatling_version}."* ]]; then
+  echo "ERROR: GatlingGradlePluginVersion (${gatling_gradle_plugin_version}) is not on the" >&2
+  echo "       ${gatling_version}.x line, but the generated table states that it tracks" >&2
+  echo "       GatlingVersion. Bump one of them, or reword the generated sentence." >&2
+  exit 1
+fi
 
 echo "Pack: ${pack_version} | Gatling: ${gatling_version} | Picatinny: ${picatinny_version}"
 
 # -- Build new block content --------------------------------------------------
-new_block="<!-- compat-table-start -->
+# shellcheck disable=SC2034  # consumed indirectly via ${!block_var} below
+compat_table_block="<!-- compat-table-start -->
 > **Auto-generated** — do not edit this block manually. Run \`bash .github/scripts/update-readme-compat.sh\` to refresh.
 
 ### Render-time vs runtime versions
@@ -176,6 +215,7 @@ All templates share the same Gatling and Picatinny defaults; the script validate
 See [\`galaxio-pack.yaml\`](galaxio-pack.yaml) for the authoritative template version list.
 <!-- compat-table-end -->"
 
+# shellcheck disable=SC2034  # consumed indirectly via ${!block_var} below
 inputs_common_block="<!-- inputs-common-start -->
 > **Auto-generated** — do not edit this block manually. Run \`bash .github/scripts/update-readme-compat.sh\` to refresh.
 
@@ -191,6 +231,7 @@ inputs_common_block="<!-- inputs-common-start -->
 | \`Intensity\` | \`${intensity_default}\` | Default load intensity written to \`simulation.conf\`. |
 <!-- inputs-common-end -->"
 
+# shellcheck disable=SC2034  # consumed indirectly via ${!block_var} below
 inputs_langtool_block="<!-- inputs-langtool-start -->
 > **Auto-generated** — do not edit this block manually. Run \`bash .github/scripts/update-readme-compat.sh\` to refresh.
 
@@ -211,6 +252,7 @@ inputs_langtool_block="<!-- inputs-langtool-start -->
 \`${gatling_version}.x\` line for as long as \`GatlingVersion\` is \`${gatling_version}\`.
 <!-- inputs-langtool-end -->"
 
+# shellcheck disable=SC2034  # consumed indirectly via ${!block_var} below
 inputs_plugins_block="<!-- inputs-plugins-start -->
 > **Auto-generated** — do not edit this block manually. Run \`bash .github/scripts/update-readme-compat.sh\` to refresh.
 
@@ -230,10 +272,13 @@ The JDBC overlay also pulls the PostgreSQL driver, pinned by \`PostgresDriverVer
 # a regex-substitution escape (\\1, \\g<1>) or another round of shell quoting.
 block_dir="$(mktemp -d)"
 trap 'rm -rf "${block_dir}"' EXIT
-printf '%s' "${new_block}" > "${block_dir}/compat-table"
-printf '%s' "${inputs_common_block}" > "${block_dir}/inputs-common"
-printf '%s' "${inputs_langtool_block}" > "${block_dir}/inputs-langtool"
-printf '%s' "${inputs_plugins_block}" > "${block_dir}/inputs-plugins"
+# Each block name maps to the shell variable <name-with-underscores>_block, so the
+# blocks array is the single source of truth; a name with no matching variable fails
+# here under `set -u` instead of surfacing as a Python traceback later.
+for block in "${blocks[@]}"; do
+  block_var="${block//-/_}_block"
+  printf '%s' "${!block_var}" > "${block_dir}/${block}"
+done
 
 python3 - "${readme}" "${block_dir}" "${blocks[@]}" <<'PYEOF'
 import pathlib, re, sys

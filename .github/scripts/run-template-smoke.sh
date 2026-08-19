@@ -178,8 +178,9 @@ grep -R "Utility.banner(" "${default_dir}/${max_performance_file}" >/dev/null
 # through SLF4J (logger org.galaxio.gatling.diagnostics) instead of stdout, and the library
 # ships no logback.xml of its own. Without this binding in the generated logback.xml the root
 # level swallows both and the simulations above print nothing — silently, with a green build.
+# -F because the logger name is a literal, not a pattern (its dots are not wildcards).
 test -f "${default_dir}/${logback_file}"
-if ! grep -q 'name="org.galaxio.gatling.diagnostics"' "${default_dir}/${logback_file}"; then
+if ! grep -qF 'name="org.galaxio.gatling.diagnostics"' "${default_dir}/${logback_file}"; then
   echo "FAIL: ${template} logback.xml does not bind org.galaxio.gatling.diagnostics;" >&2
   echo "      picatinny >= 1.23.0 would emit the startup banner into the void." >&2
   exit 1
@@ -209,6 +210,16 @@ set +e
 )
 compile_status=$?
 set -e
+
+# Behavioural half of the binding guard: the render sets DiagnosticsEnabled=true, so
+# Utility.diagnostics() in the Debug simulation must actually reach the console through
+# the logback binding. A logger that is present but disabled (level="OFF") or unwired
+# (no appender-ref) still satisfies the grep above and is only caught here.
+if ! grep -qF 'max heap' "${compile_log}"; then
+  echo "FAIL: ${template} ran with picatinny diagnostics enabled but emitted no diagnostics" >&2
+  echo "      block — the org.galaxio.gatling.diagnostics binding is present but not live." >&2
+  exit 1
+fi
 
 # Regression guard: logback must not dump its own config status to the console.
 # (Protects the NopStatusListener fix; nested <if> in <root> would re-introduce it.)

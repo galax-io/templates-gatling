@@ -44,17 +44,23 @@
          this binding the root level below would swallow them. The whole block arrives as one
          log event: %msg%n prints it verbatim and keeps the ASCII box aligned, and
          additivity="false" stops it also printing through the prefixed root appenders.
-         Toggle the output with picatinny.startup.banner.enabled / picatinny.diagnostics.enabled
-         in simulation.conf, not with this logger's level. -->
-    <appender name="BANNER" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%msg%n</pattern>
-        </encoder>
-    </appender>
+         Whether the blocks are produced at all is controlled by
+         picatinny.startup.banner.enabled / picatinny.diagnostics.enabled in simulation.conf;
+         CONSOLE_LOGGING=OFF suppresses them here like any other console output. The appender
+         and the logger share one <if> because logback rejects <if> nested inside <logger>. -->
+    <if condition='!property("CONSOLE_LOGGING").contains("OFF")'>
+        <then>
+            <appender name="BANNER" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%msg%n</pattern>
+                </encoder>
+            </appender>
 
-    <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
-        <appender-ref ref="BANNER"/>
-    </logger>
+            <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
+                <appender-ref ref="BANNER"/>
+            </logger>
+        </then>
+    </if>
 
     <logger name="io.gatling.http.engine.response.DefaultStatsProcessor" level="WARN"/>
 

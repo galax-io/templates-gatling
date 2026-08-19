@@ -17,10 +17,10 @@
     <if condition='property("FILE_LOGGING").contains("ON")'>
         <then>
             <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-                <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <!-- Threshold, not LevelFilter: the previous DEBUG-only filter denied
+                     every INFO/WARN/ERROR event, including the picatinny banner. -->
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
                     <level>DEBUG</level>
-                    <onMatch>ACCEPT</onMatch>
-                    <onMismatch>DENY</onMismatch>
                 </filter>
                 <encoder>
                     <pattern>%date{yyy-MM-dd'T'HH:mm:ss.SSSXXX, UTC} ${PROJECT:-debug}%replace(%msg){'[\r\n]+', ' '}%n</pattern>
@@ -37,6 +37,49 @@
                 <appender-ref ref="FILE"/>
             </appender>
         </then>
+    </if>
+
+    <!-- Picatinny startup banner / diagnostics. Since picatinny 1.23.0 these are emitted
+         through SLF4J (logger org.galaxio.gatling.diagnostics) instead of stdout, so without
+         this binding the root level below would swallow them. The whole block arrives as one
+         log event: %msg%n prints it verbatim and keeps the ASCII box aligned, and
+         additivity="false" stops it also printing through the prefixed root appenders.
+         Whether the blocks are produced at all is controlled by
+         picatinny.startup.banner.enabled / picatinny.diagnostics.enabled in simulation.conf;
+         CONSOLE_LOGGING=OFF suppresses them here like any other console output, and
+         FILE_LOGGING=ON archives them alongside the run they describe. Logback rejects <if>
+         nested inside <logger>, so each reachable combination selects a whole element. -->
+    <if condition='!property("CONSOLE_LOGGING").contains("OFF")'>
+        <then>
+            <appender name="BANNER" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%msg%n</pattern>
+                </encoder>
+            </appender>
+
+            <if condition='property("FILE_LOGGING").contains("ON")'>
+                <then>
+                    <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
+                        <appender-ref ref="BANNER"/>
+                        <appender-ref ref="ASYNC_FILE"/>
+                    </logger>
+                </then>
+                <else>
+                    <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
+                        <appender-ref ref="BANNER"/>
+                    </logger>
+                </else>
+            </if>
+        </then>
+        <else>
+            <if condition='property("FILE_LOGGING").contains("ON")'>
+                <then>
+                    <logger name="org.galaxio.gatling.diagnostics" level="INFO" additivity="false">
+                        <appender-ref ref="ASYNC_FILE"/>
+                    </logger>
+                </then>
+            </if>
+        </else>
     </if>
 
     <logger name="io.gatling.http.engine.response.DefaultStatsProcessor" level="WARN"/>

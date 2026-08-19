@@ -3,11 +3,11 @@ NameWord: ordersapi
 Package: org.example.performance
 PackagePath: org/example/performance
 ScalaVersion: 2.13.18
-SbtVersion: 1.12.13
+SbtVersion: 1.12.15
 GatlingVersion: 3.13.5
-SbtGatlingVersion: 4.18.3
-SbtScalafmtVersion: 2.6.1
-GatlingPicatinnyVersion: 1.17.1
+SbtGatlingVersion: 4.19.1
+SbtScalafmtVersion: 2.6.2
+GatlingPicatinnyVersion: 1.25.0
 BaseUrl: http://localhost:8080
 BaseAuthUrl: http://localhost:8080/auth
 WsBaseUrl: ws://localhost:8080/ws
@@ -19,8 +19,9 @@ TestDuration: 5 seconds
 Pacing: 1 second
 ScenarioName: Orders smoke flow
 StartupBannerEnabled: "true"
-DiagnosticsEnabled: "false"
-KafkaPluginVersion: 1.0.6
-KafkaStreamsVersion: 7.9.8-ce
-JdbcPluginVersion: 1.0.3
-AmqpPluginVersion: 1.2.10
+DiagnosticsEnabled: "true"
+KafkaPluginVersion: 1.3.0
+KafkaStreamsVersion: 3.9.2
+JdbcPluginVersion: 1.5.0
+PostgresDriverVersion: 42.7.13
+AmqpPluginVersion: 1.3.0

@@ -13,6 +13,7 @@ lazy val root = (project in file("."))
     ),
     name := "{{ .Name }}",
 {{- if eq .KafkaPluginEnabled "true" }}
+    // Needed only for KafkaPluginVersion < 1.3.0 (inherits Confluent-only artifacts) and for Schema-Registry Avro.
     resolvers += "Confluent" at "https://packages.confluent.io/maven/",
 {{- end }}
     libraryDependencies ++= gatling,

@@ -26,6 +26,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 repositories {
     mavenCentral()
 {{- if eq .KafkaPluginEnabled "true" }}
+    // Needed only for KafkaPluginVersion < 1.3.0 (inherits Confluent-only artifacts) and for Schema-Registry Avro.
     maven("https://packages.confluent.io/maven/")
 {{- end }}
     mavenLocal()

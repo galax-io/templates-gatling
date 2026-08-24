@@ -305,7 +305,7 @@ jobs:
 
       - name: Setup sbt
         if: matrix.build_tool == 'sbt'
-        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+        uses: sbt/setup-sbt@c7d2d6258b4bd0d3ec5129e6b3453199d3c79729 # v1.5.8
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
@@ -366,7 +366,7 @@ jobs:
           java-version: "21"
 
       - name: Setup sbt
-        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+        uses: sbt/setup-sbt@c7d2d6258b4bd0d3ec5129e6b3453199d3c79729 # v1.5.8
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 

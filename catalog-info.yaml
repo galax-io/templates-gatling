@@ -9,3 +9,9 @@ spec:
   type: tool
   lifecycle: production
   owner: galaxio
+  dependsOn:
+    - component:default/gatling-picatinny
+    - component:default/gatling-kafka-plugin
+    - component:default/gatling-jdbc-plugin
+    - component:default/gatling-amqp-plugin
+    - component:default/sbt-schema-registry-plugin

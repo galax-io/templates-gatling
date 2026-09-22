@@ -405,16 +405,23 @@ sbt -batch Gatling/compile
 ### Integration tests
 
 Integration tests for JDBC, AMQP, and Kafka plugins require Docker.
-CI runs them automatically. To run locally:
+CI runs them automatically. To run locally, start the Docker Compose stack
+first, then run each plugin with a single argument (the script always
+renders the `scala-sbt` template):
 
 ```bash
-bash .github/scripts/run-integration-test.sh scala-sbt kafka
-bash .github/scripts/run-integration-test.sh scala-sbt jdbc
-bash .github/scripts/run-integration-test.sh scala-sbt amqp
+docker compose -f .github/integration/docker-compose.yml up -d --wait
+
+bash .github/scripts/run-integration-test.sh kafka
+bash .github/scripts/run-integration-test.sh jdbc
+bash .github/scripts/run-integration-test.sh amqp
+
+docker compose -f .github/integration/docker-compose.yml down
 ```
 
-Each script renders the template with the plugin enabled, starts the required
-Docker Compose stack, runs the Gatling scenario, and verifies output.
+Each command renders the `scala-sbt` template with the given plugin enabled,
+compiles it, runs the Gatling scenario against the running services, and
+verifies output.
 
 ### Versioning
 

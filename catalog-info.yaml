@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: templates-gatling
+  description: Gatling project template pack (Java/Kotlin/Scala, Gradle/Maven/sbt) scaffolded by galaxio-cli
+  annotations:
+    github.com/project-slug: galax-io/templates-gatling
+spec:
+  type: tool
+  lifecycle: production
+  owner: galaxio

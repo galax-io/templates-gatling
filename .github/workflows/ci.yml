@@ -266,7 +266,7 @@ jobs:
           echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -308,7 +308,7 @@ jobs:
 
       - name: Setup sbt
         if: matrix.build_tool == 'sbt'
-        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+        uses: sbt/setup-sbt@82da71df4e122282484a99a8d70096bc2369dbd8 # v1.5.9
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 
@@ -365,13 +365,13 @@ jobs:
           echo "${RUNNER_TEMP}/galaxio-bin" >> "${GITHUB_PATH}"
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Setup sbt
-        uses: sbt/setup-sbt@3afe9cf056c5d139bfc46579af1192d77a2f0821 # v1.4.0
+        uses: sbt/setup-sbt@82da71df4e122282484a99a8d70096bc2369dbd8 # v1.5.9
         with:
           disk-cache: false   # sbt 2.x feature; our sbt 1.x never populates it (warns on save)
 

@@ -4,6 +4,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: friday
     groups:
       github-actions:
         patterns:
@@ -12,3 +13,4 @@ updates:
     directory: /.github/integration
     schedule:
       interval: weekly
+      day: friday

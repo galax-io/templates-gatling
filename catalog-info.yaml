@@ -5,6 +5,13 @@ metadata:
   description: Gatling project template pack (Java/Kotlin/Scala, Gradle/Maven/sbt) scaffolded by galaxio-cli
   annotations:
     github.com/project-slug: galax-io/templates-gatling
+    galaxio.io/uses.gatling-picatinny: "api: template input GatlingPicatinnyVersion"
+    galaxio.io/uses.gatling-kafka-plugin: "api: template inputs KafkaPluginEnabled/Version"
+    galaxio.io/uses.gatling-jdbc-plugin: "api: template inputs JdbcPluginEnabled/Version"
+    galaxio.io/uses.gatling-amqp-plugin: "api: template inputs AmqpPluginEnabled/Version"
+    galaxio.io/uses.sbt-schema-registry-plugin: "api: Kafka projects get Schema Registry through the Kafka plugin"
+    galaxio.io/plans.docker-images: "runtime: generated projects build and run in the builder and runtime images"
+    galaxio.io/uses.spec-kit-galaxio-bootstrap: "process: created from the template, takes process updates via copier update"
 spec:
   type: tool
   lifecycle: production
@@ -15,3 +22,4 @@ spec:
     - component:default/gatling-jdbc-plugin
     - component:default/gatling-amqp-plugin
     - component:default/sbt-schema-registry-plugin
+    - component:default/spec-kit-galaxio-bootstrap

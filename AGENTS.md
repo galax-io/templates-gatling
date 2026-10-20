@@ -4,6 +4,8 @@ Gatling performance testing template pack for galaxio CLI (Go template engine, G
 
 CLI repo: https://github.com/galax-io/galaxio-cli (`cmd/galaxio/template.go` — how `init` resolves pack → renders `files/` → merges plugin overlays)
 
+**Constitution:** the principles of this repository are in `.specify/memory/constitution.md`; where they conflict with this file, the constitution wins.
+
 ## Commands
 
 ```bash

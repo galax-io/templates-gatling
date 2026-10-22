@@ -309,7 +309,7 @@ points at the repository; the version pins which release is used.
 
 ### Render-time vs runtime versions
 
-**Pack version** (`0.16.0`) is render-time metadata: `galaxio-cli` resolves this
+**Pack version** (`0.16.2`) is render-time metadata: `galaxio-cli` resolves this
 version when you run `galaxio template init gatling/<template>` and downloads the matching pack
 from the registry.
 
@@ -328,7 +328,7 @@ compatible CLI version.
 
 ### Version table
 
-Pack `0.16.0` · Gatling `3.13.5` · Picatinny `1.25.0`
+Pack `0.16.2` · Gatling `3.13.5` · Picatinny `1.25.0`
 
 | Template | Language | Build tool | Template version | Gatling | Picatinny |
 |---|---|---|---|---|---|

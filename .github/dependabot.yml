@@ -4,7 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: friday
+      day: wednesday
+      time: "01:00"
+      timezone: Etc/UTC
     groups:
       github-actions:
         patterns:
@@ -13,4 +15,6 @@ updates:
     directory: /.github/integration
     schedule:
       interval: weekly
-      day: friday
+      day: wednesday
+      time: "01:20"
+      timezone: Etc/UTC
